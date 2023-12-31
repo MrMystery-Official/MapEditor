@@ -937,11 +937,11 @@ void Frontend::Render() {
 
 		ImGui::NewLine();
 		ImGui::Text("Phive");
-		if (SelectedActor.GetGyml() == "MapEditor_Collision_Cube")
+		if (SelectedActor.GetGyml().rfind("MapEditor_Collision_Cube_", 0) == 0)
 		{
 			ImGui::Checkbox("Climbable", &SelectedActor.IsCollisionClimbable());
 		}
-		if (SelectedActor.GetGyml() == "MapEditor_Collision_File")
+		if (SelectedActor.GetGyml().rfind("MapEditor_Collision_File", 0) == 0)
 		{
 			ImGui::InputText("Phive Shape", &SelectedActor.GetCollisionFile());
 		}

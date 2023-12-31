@@ -272,11 +272,11 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 
 				BymlFile::Node BoxHalfExtentsDict(BymlFile::Type::Dictionary, "HalfExtents");
 				BymlFile::Node BoxHalfExtentsX(BymlFile::Type::Float, "X");
-				BoxHalfExtentsX.SetValue<float>(Actor.GetScale().GetX() * 0.5);
+				BoxHalfExtentsX.SetValue<float>(0.5f);
 				BymlFile::Node BoxHalfExtentsY(BymlFile::Type::Float, "Y");
-				BoxHalfExtentsY.SetValue<float>(Actor.GetScale().GetY() * 0.5);
+				BoxHalfExtentsY.SetValue<float>(0.5f);
 				BymlFile::Node BoxHalfExtentsZ(BymlFile::Type::Float, "Z");
-				BoxHalfExtentsZ.SetValue<float>(Actor.GetScale().GetZ() * 0.5);
+				BoxHalfExtentsZ.SetValue<float>(0.5f);
 				BoxHalfExtentsDict.AddChild(BoxHalfExtentsX);
 				BoxHalfExtentsDict.AddChild(BoxHalfExtentsY);
 				BoxHalfExtentsDict.AddChild(BoxHalfExtentsZ);
@@ -328,8 +328,6 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 				Util::CreateDir(Path + "/Pack/Actor");
 				//ActorPackSarcCompressed.Compress(ExportPath + "/Pack/Actor/MapEditor_Bake_Collision_RCube_" + std::to_string(actor.SRTHash) + ".pack.zs");
 				ZStdFile::Compress(ActorPackSarc.ToBinary(), ZStdFile::Dictionary::Pack).WriteToFile(Path + "/Pack/Actor/" + Actor.GetGyml() + ".pack.zs");
-				
-				Actor.SetScale(Vector3F(1, 1, 1));
 			}
 
 			if (Actor.GetGyml().rfind("MapEditor_Collision_File_", 0) == 0)
