@@ -1096,6 +1096,9 @@ void Frontend::Render() {
 				LoadMapPopUp.IsOpen() = false;
 				LoadedDungeon = true;
 				(*Actors) = MapLoader::LoadMap(LoadMapPopUp.GetData()[0], (MapLoader::Type)LoadMapPopUp.IntData);
+				camera.Position.x = Actors->at(0).GetTranslate().GetX();
+				camera.Position.y = Actors->at(0).GetTranslate().GetY();
+				camera.Position.z = Actors->at(0).GetTranslate().GetZ();
 			}
 			ImGui::PopItemWidth();
 		}
