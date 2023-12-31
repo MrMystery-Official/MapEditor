@@ -41,33 +41,26 @@ namespace Frustum
 {
 	float m_Frustum[6][4];
 
-	// We create an enum of the sides so we don't have to call each side 0 or 1.
-// This way it makes it more understandable and readable when dealing with frustum sides.
 	enum FrustumSide
 	{
-		RIGHT = 0,		// The RIGHT side of the frustum
-		LEFT = 1,		// The LEFT	 side of the frustum
-		BOTTOM = 2,		// The BOTTOM side of the frustum
-		TOP = 3,		// The TOP side of the frustum
-		BACK = 4,		// The BACK	side of the frustum
-		FRONT = 5			// The FRONT side of the frustum
+		RIGHT = 0,
+		LEFT = 1,
+		BOTTOM = 2,
+		TOP = 3,
+		BACK = 4,
+		FRONT = 5
 	};
 
-	// Like above, instead of saying a number for the ABC and D of the plane, we
-	// want to be more descriptive.
 	enum PlaneData
 	{
-		A = 0,				// The X value of the plane's normal
-		B = 1,				// The Y value of the plane's normal
-		C = 2,				// The Z value of the plane's normal
-		D = 3				// The distance the plane is from the origin
+		A = 0,
+		B = 1,
+		C = 2,
+		D = 3
 	};
 
 	void NormalizePlane(float frustum[6][4], int side)
 	{
-		// Here we calculate the magnitude of the normal to the plane (point A B C)
-		// Remember that (A, B, C) is that same thing as the normal's (X, Y, Z).
-		// To calculate magnitude you use the equation:  magnitude = sqrt( x^2 + y^2 + z^2)
 		float magnitude = (float)sqrt(frustum[side][A] * frustum[side][A] +
 			frustum[side][B] * frustum[side][B] +
 			frustum[side][C] * frustum[side][C]);
@@ -82,12 +75,9 @@ namespace Frustum
 
 	void CalculateFrustum()
 	{
-		const float* proj = glm::value_ptr(camera.GetProjectionMatrix());								// This will hold our projection matrix
-		const float* modl = glm::value_ptr(camera.GetViewMatrix());								// This will hold our modelview matrix
-		float clip[16];							// This will hold the clipping planes
-
-		// Now that we have our modelview and projection matrix, if we combine these 2 matrices,
-		// it will give us our clipping planes.  To combine 2 matrices, we multiply them.
+		const float* proj = glm::value_ptr(camera.GetProjectionMatrix());
+		const float* modl = glm::value_ptr(camera.GetViewMatrix());
+		float clip[16];
 
 		clip[0] = modl[0] * proj[0] + modl[1] * proj[4] + modl[2] * proj[8] + modl[3] * proj[12];
 		clip[1] = modl[0] * proj[1] + modl[1] * proj[5] + modl[2] * proj[9] + modl[3] * proj[13];
@@ -109,91 +99,53 @@ namespace Frustum
 		clip[14] = modl[12] * proj[2] + modl[13] * proj[6] + modl[14] * proj[10] + modl[15] * proj[14];
 		clip[15] = modl[12] * proj[3] + modl[13] * proj[7] + modl[14] * proj[11] + modl[15] * proj[15];
 
-		// Now we actually want to get the sides of the frustum.  To do this we take
-		// the clipping planes we received above and extract the sides from them.
-
-		// This will extract the RIGHT side of the frustum
 		m_Frustum[RIGHT][A] = clip[3] - clip[0];
 		m_Frustum[RIGHT][B] = clip[7] - clip[4];
 		m_Frustum[RIGHT][C] = clip[11] - clip[8];
 		m_Frustum[RIGHT][D] = clip[15] - clip[12];
-
-		// Now that we have a normal (A,B,C) and a distance (D) to the plane,
-		// we want to normalize that normal and distance.
-
-		// Normalize the RIGHT side
 		NormalizePlane(m_Frustum, RIGHT);
 
-		// This will extract the LEFT side of the frustum
 		m_Frustum[LEFT][A] = clip[3] + clip[0];
 		m_Frustum[LEFT][B] = clip[7] + clip[4];
 		m_Frustum[LEFT][C] = clip[11] + clip[8];
 		m_Frustum[LEFT][D] = clip[15] + clip[12];
-
-		// Normalize the LEFT side
 		NormalizePlane(m_Frustum, LEFT);
 
-		// This will extract the BOTTOM side of the frustum
 		m_Frustum[BOTTOM][A] = clip[3] + clip[1];
 		m_Frustum[BOTTOM][B] = clip[7] + clip[5];
 		m_Frustum[BOTTOM][C] = clip[11] + clip[9];
 		m_Frustum[BOTTOM][D] = clip[15] + clip[13];
-
-		// Normalize the BOTTOM side
 		NormalizePlane(m_Frustum, BOTTOM);
 
-		// This will extract the TOP side of the frustum
 		m_Frustum[TOP][A] = clip[3] - clip[1];
 		m_Frustum[TOP][B] = clip[7] - clip[5];
 		m_Frustum[TOP][C] = clip[11] - clip[9];
 		m_Frustum[TOP][D] = clip[15] - clip[13];
-
-		// Normalize the TOP side
 		NormalizePlane(m_Frustum, TOP);
 
-		// This will extract the BACK side of the frustum
 		m_Frustum[BACK][A] = clip[3] - clip[2];
 		m_Frustum[BACK][B] = clip[7] - clip[6];
 		m_Frustum[BACK][C] = clip[11] - clip[10];
 		m_Frustum[BACK][D] = clip[15] - clip[14];
-
-		// Normalize the BACK side
 		NormalizePlane(m_Frustum, BACK);
 
-		// This will extract the FRONT side of the frustum
 		m_Frustum[FRONT][A] = clip[3] + clip[2];
 		m_Frustum[FRONT][B] = clip[7] + clip[6];
 		m_Frustum[FRONT][C] = clip[11] + clip[10];
 		m_Frustum[FRONT][D] = clip[15] + clip[14];
-
-		// Normalize the FRONT side
 		NormalizePlane(m_Frustum, FRONT);
 	}
 
 	bool SphereInFrustum(float x, float y, float z, float radius)
 	{
-		// Now this function is almost identical to the PointInFrustum(), except we
-		// now have to deal with a radius around the point.  The point is the center of
-		// the radius.  So, the point might be outside of the frustum, but it doesn't
-		// mean that the rest of the sphere is.  It could be half and half.  So instead of
-		// checking if it's less than 0, we need to add on the radius to that.  Say the
-		// equation produced -2, which means the center of the sphere is the distance of
-		// 2 behind the plane.  Well, what if the radius was 5?  The sphere is still inside,
-		// so we would say, if(-2 < -5) then we are outside.  In that case it's false,
-		// so we are inside of the frustum, but a distance of 3.  This is reflected below.
-
-		// Go through all the sides of the frustum
 		for (int i = 0; i < 6; i++)
 		{
-			// If the center of the sphere is farther away from the plane than the radius
 			if (m_Frustum[i][A] * x + m_Frustum[i][B] * y + m_Frustum[i][C] * z + m_Frustum[i][D] <= -radius)
 			{
-				// The distance was greater than the radius so the sphere is outside of the frustum
 				return false;
 			}
 		}
 
-		// The sphere was inside of the frustum!
 		return true;
 	}
 };
@@ -359,7 +311,14 @@ void CheckActorSelection(ImVec2 SceneWindowSize, ImVec2 MousePos)
 
 			model = glm::scale(model, glm::vec3(Actor.GetScale().GetX(), Actor.GetScale().GetY(), Actor.GetScale().GetZ()));
 
-			BfresFile::LOD* LODModel = &Actor.GetModel()->GetModels()[0].LODs[Actor.GetModel()->GetModels()[0].LODs.size() - 1];
+			float DistanceToCamera = fabs(pow(Actor.GetTranslate().GetX() - camera.Position.x, 2) + pow(Actor.GetTranslate().GetY() - camera.Position.y, 2) + pow(Actor.GetTranslate().GetZ() - camera.Position.z, 2));
+
+			BfresFile::LOD* LODModel = &Actor.GetModel()->GetModels()[0].LODs[0];
+
+			if (DistanceToCamera >= 10000) //Max distance is 100, 10000 = 100 to the power of 2
+			{
+				LODModel = &Actor.GetModel()->GetModels()[0].LODs[Actor.GetModel()->GetModels()[0].LODs.size() - 1];
+			}
 
 			glUniformMatrix4fv(glGetUniformLocation(PickingShader.ID, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(model));
 			glUniform4f(glGetUniformLocation(PickingShader.ID, "PickingColor"), R / 255.0f, G / 255.0f, B / 255.0f, 1.0f);
