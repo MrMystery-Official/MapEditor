@@ -38,17 +38,20 @@ void BfresFile::CreateOpenGLObjects()
     {
         for (BfresFile::LOD& LODModel : Model.LODs)
         {
+            int FaceOffset = 0;
             for (int SubModelIndex = 0; SubModelIndex < LODModel.Faces.size(); SubModelIndex++)
             {
                 if (Model.Materials[SubModelIndex].Textures.empty())
                 {
                     LODModel.Faces.erase(LODModel.Faces.begin() + SubModelIndex);
+                    FaceOffset++;
                     continue;
                 }
                 std::vector<float>* TexCoords = &Model.Materials[SubModelIndex].Textures[0].TexCoordinates;
                 if (TexCoords->empty())
                 {
                     LODModel.Faces.erase(LODModel.Faces.begin() + SubModelIndex);
+                    FaceOffset++;
                     continue;
                 }
 
@@ -72,7 +75,7 @@ void BfresFile::CreateOpenGLObjects()
                 // Generates Vertex Buffer Object and links it to vertices
                 VBO VBO1(Vertices.data(), sizeof(float) * Vertices.size());
                 // Generates Element Buffer Object and links it to indices
-                EBO EBO1(LODModel.Faces[SubModelIndex].data(), sizeof(int) * LODModel.Faces[SubModelIndex].size());
+                EBO EBO1(LODModel.Faces[SubModelIndex - FaceOffset].data(), sizeof(int) * LODModel.Faces[SubModelIndex - FaceOffset].size());
 
                 // Links VBO attributes such as coordinates and colors to VAO
                 VAO1.LinkAttrib(VBO1, 0, 3, GL_FLOAT, 5 * sizeof(float), (void*)0);
@@ -499,7 +502,6 @@ BfresFile::BfresFile(std::string Path, std::vector<unsigned char> Bytes)
                     {
                         std::cerr << "ERROR: Unknown Face Type in Model!\n";
                     }
-
 
                 Reader.Seek(MeshBaseOffset + ((LODIndex+1) * 56), BinaryVectorReader::Position::Begin);
             }
