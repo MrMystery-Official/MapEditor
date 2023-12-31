@@ -26,14 +26,14 @@ void ImGuiPopUp::Begin()
 
 bool ImGuiPopUp::BeginPopupModal()
 {
-	//return ImGui::BeginPopupModal(this->m_Title.c_str(), NULL, ImGuiWindowFlags_NoResize);
-	return ImGui::BeginPopupModal(this->m_Title.c_str());
+	return ImGui::BeginPopupModal(this->m_Title.c_str(), NULL, ImGuiWindowFlags_NoResize);
+	//return ImGui::BeginPopupModal(this->m_Title.c_str());
 }
 
 void ImGuiPopUp::End()
 {
-	ImGui::SameLine();
-	ImGui::Text(std::string("Size: " + std::to_string(ImGui::GetWindowSize().x) + "x" + std::to_string(ImGui::GetWindowSize().y)).c_str());
+	//ImGui::SameLine();
+	//ImGui::Text(std::string("Size: " + std::to_string(ImGui::GetWindowSize().x) + "x" + std::to_string(ImGui::GetWindowSize().y)).c_str());
 	ImGui::EndPopup();
 }
 
