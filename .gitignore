@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 
 MapEditor/WorkingDir/
+*.pack
