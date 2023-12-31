@@ -354,6 +354,8 @@ ImGuiPopUp PhivePlacementPopUp("Add Phive placement", 400, 100, 2);
 ImGuiPopUp AddActorPopUp("Add Actor", 400, 124, 3);
 ImGuiPopUp GenerateHashesPopUp("Generate Hashes (Phive)", 777, 220, 1);
 ImGuiPopUp StackActorsPopUp("Stack actors", 600, 170, 5);
+ImGuiPopUp AddLinkPopUp("Add Link", 400, 146, 4);
+ImGuiPopUp AddRailPopUp("Add Rail", 400, 123, 3);
 
 ImGuiPopUp SetPathsPopUp("Setup", 600, 181, 2);
 ImGuiPopUp LoadMapPopUp("Open level", 468, 118, 1);
@@ -417,7 +419,9 @@ void Frontend::Render() {
 		&& !AddActorPopUp.IsOpen()
 		&& !GenerateHashesPopUp.IsOpen()
 		&& !StackActorsPopUp.IsOpen()
-		&& !ExportModPopUp.IsOpen())
+		&& !ExportModPopUp.IsOpen()
+		&& !AddLinkPopUp.IsOpen()
+		&& !AddRailPopUp.IsOpen())
 	{
 		CheckActorSelection(ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), ImVec2(ImGui::GetMousePos().x - ImGui::GetWindowPos().x - ImGui::GetWindowContentRegionMin().x,
 			ImGui::GetMousePos().y - ImGui::GetWindowPos().y - ImGui::GetWindowContentRegionMin().y));
@@ -973,7 +977,12 @@ void Frontend::Render() {
 		ImGui::SameLine();
 		if (ImGui::Button("Add##2"))
 		{
-			//AddLinkPopUp.OpenPopUp();
+			AddLinkPopUp.IsOpen() = true;
+		}
+		if (AddLinkPopUp.IsCompleted())
+		{
+			SelectedActor.GetLinks().push_back({ stoull(AddLinkPopUp.GetData()[0]), AddLinkPopUp.GetData()[1], AddLinkPopUp.GetData()[2], stoull(AddLinkPopUp.GetData()[3]) });
+			AddLinkPopUp.Reset();
 		}
 		for (auto it = SelectedActor.GetLinks().begin(); it != SelectedActor.GetLinks().end();)
 		{
@@ -991,6 +1000,35 @@ void Frontend::Render() {
 				it++;
 			}
 			Identifier += 5;
+		}
+
+		ImGui::NewLine();
+		ImGui::Text("Rails");
+		ImGui::SameLine();
+		if (ImGui::Button("Add##3"))
+		{
+			AddRailPopUp.IsOpen() = true;
+		}
+		if (AddRailPopUp.IsCompleted())
+		{
+			SelectedActor.GetRails().push_back({ stoull(AddRailPopUp.GetData()[0]), AddRailPopUp.GetData()[1], AddRailPopUp.GetData()[2] });
+			AddRailPopUp.Reset();
+		}
+		for (auto it = SelectedActor.GetRails().begin(); it != SelectedActor.GetRails().end();)
+		{
+			Actor::Rail& Rail = *it;
+			ImGui::InputScalar(std::string("Dst##" + std::to_string(Identifier)).c_str(), ImGuiDataType_::ImGuiDataType_U64, &Rail.Dst);
+			ImGui::InputText(std::string("Gyaml##" + std::to_string(Identifier + 1)).c_str(), &Rail.Gyaml);
+			ImGui::InputText(std::string("Name##" + std::to_string(Identifier + 2)).c_str(), &Rail.Name);
+			ImGui::Text(" ");
+			ImGui::SameLine();
+			if (ImGui::Button(std::string("Del##" + std::to_string(Identifier + 3)).c_str())) {
+				it = SelectedActor.GetRails().erase(it);
+			}
+			else {
+				it++;
+			}
+			Identifier += 4;
 		}
 
 		if (glfwGetKey(Window, GLFW_KEY_DELETE) == GLFW_PRESS)
@@ -1082,6 +1120,51 @@ void Frontend::Render() {
 			}
 		}
 		ExportModPopUp.End();
+	}
+
+	if (AddLinkPopUp.IsOpen())
+	{
+		AddLinkPopUp.Begin();
+		if (AddLinkPopUp.BeginPopupModal())
+		{
+			ImGui::InputText("Dst", &AddLinkPopUp.GetData()[0]);
+			ImGui::InputText("Gyml", &AddLinkPopUp.GetData()[1]);
+			ImGui::InputText("Name", &AddLinkPopUp.GetData()[2]);
+			ImGui::InputText("Src", &AddLinkPopUp.GetData()[3]);
+			if (ImGui::Button("Add"))
+			{
+				AddLinkPopUp.IsCompleted() = true;
+				AddLinkPopUp.IsOpen() = false;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Return"))
+			{
+				AddLinkPopUp.Reset();
+			}
+		}
+		AddLinkPopUp.End();
+	}
+
+	if (AddRailPopUp.IsOpen())
+	{
+		AddRailPopUp.Begin();
+		if (AddRailPopUp.BeginPopupModal())
+		{
+			ImGui::InputText("Dst", &AddRailPopUp.GetData()[0]);
+			ImGui::InputText("Gyml", &AddRailPopUp.GetData()[1]);
+			ImGui::InputText("Name", &AddRailPopUp.GetData()[2]);
+			if (ImGui::Button("Add"))
+			{
+				AddRailPopUp.IsCompleted() = true;
+				AddRailPopUp.IsOpen() = false;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Return"))
+			{
+				AddRailPopUp.Reset();
+			}
+		}
+		AddRailPopUp.End();
 	}
 
 	if (StackActorsPopUp.IsOpen())
