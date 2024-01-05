@@ -58,6 +58,24 @@
     <Filter Include="Header Files\external">
       <UniqueIdentifier>{9021bff1-56d5-4f5d-8519-f5e3e06bf1af}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\file\ainb">
+      <UniqueIdentifier>{d2c87ca7-5a1a-4019-b48f-8d300dc0aacc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\file\ainb">
+      <UniqueIdentifier>{9621afa6-642a-448a-8bd4-9d617aacf9e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\editor\ainb">
+      <UniqueIdentifier>{70c13eae-01ae-46c6-ae00-d501cb2983f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\imgui_node_editor">
+      <UniqueIdentifier>{5056cb32-44b5-452e-a363-75b20e4f25e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\imgui_node_editor">
+      <UniqueIdentifier>{e8880022-4033-4dcf-8402-555cabdb9534}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\editor\ainb">
+      <UniqueIdentifier>{62dc2868-b8df-4e1b-8bfd-89fd96ae74f0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -177,6 +195,15 @@
     <ClCompile Include="EditorConfig.cpp">
       <Filter>Source Files\editor</Filter>
     </ClCompile>
+    <ClCompile Include="AINB.cpp">
+      <Filter>Source Files\file\ainb</Filter>
+    </ClCompile>
+    <ClCompile Include="AINBEditor.cpp">
+      <Filter>Source Files\editor\ainb</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_node_editor\imnodes.cpp">
+      <Filter>Source Files\imgui_node_editor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imconfig.h">
@@ -292,6 +319,18 @@
     </ClInclude>
     <ClInclude Include="EditorConfig.h">
       <Filter>Header Files\editor</Filter>
+    </ClInclude>
+    <ClInclude Include="AINB.h">
+      <Filter>Header Files\file\ainb</Filter>
+    </ClInclude>
+    <ClInclude Include="AINBEditor.h">
+      <Filter>Header Files\editor\ainb</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_node_editor\imnodes_internal.h">
+      <Filter>Header Files\imgui_node_editor</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_node_editor\imnodes.h">
+      <Filter>Header Files\imgui_node_editor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

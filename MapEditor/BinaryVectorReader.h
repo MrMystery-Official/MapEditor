@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 class BinaryVectorReader
 {
@@ -28,6 +29,8 @@ public:
 	int64_t ReadInt64();
 	float ReadFloat();
 	double ReadDouble();
+	void ReadStruct(void* Dest, uint32_t Size, int Offset = -1);
+	std::string ReadString();
 private:
 	std::vector<unsigned char>& m_Bytes;
 	int m_Offset = -1;

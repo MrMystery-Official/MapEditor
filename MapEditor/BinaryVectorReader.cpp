@@ -121,3 +121,26 @@ double BinaryVectorReader::ReadDouble()
 	memcpy(&Result, &Temp, sizeof(Result));
 	return Result;
 }
+
+void BinaryVectorReader::ReadStruct(void* Dest, uint32_t Size, int Offset)
+{
+	if (Offset != -1) this->Seek(Offset, BinaryVectorReader::Position::Begin);
+	
+	std::copy(this->m_Bytes.begin() + this->m_Offset + 1, this->m_Bytes.begin() + this->m_Offset + 1 + Size, static_cast<char*>(Dest));
+
+	this->m_Offset += Size;
+}
+
+std::string BinaryVectorReader::ReadString()
+{
+	std::string Result;
+	char CurrentCharacter = this->ReadInt8();
+	Result += CurrentCharacter;
+	while (CurrentCharacter != 0x00)
+	{
+		CurrentCharacter = this->ReadInt8();
+		Result += CurrentCharacter;
+	}
+	Result.pop_back();
+	return Result;
+}

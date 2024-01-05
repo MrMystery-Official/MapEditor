@@ -1,4 +1,5 @@
 #include "Frontend.h"
+#include "AINBEditor.h"
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -154,6 +155,8 @@ float Max(float a, float b) {
 	return a > b ? a : b;
 }
 
+AINBEditor NodeEditor;
+
 void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActors) {
 	Actors = &LocalActors;
 	LoadedEConfig = LoadedEditorConfig;
@@ -177,6 +180,7 @@ void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActo
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
+	ImNodes::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -223,6 +227,12 @@ void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActo
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	camera = Camera(WIDTH, HEIGHT, glm::vec3(0.0f, 0.0f, 2.0f));
+
+	NodeEditor = AINBEditor(Config::GetRomFSFile("Logic/Dungeon001_1800.logic.root.ainb"));
+
+	//TODO: REMOVE
+	LoadedDungeon = true;
+	LoadedEConfig = true;
 }
 
 void Frontend::CleanUp() {
@@ -237,6 +247,7 @@ void Frontend::CleanUp() {
 	TextureShader.Delete();
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
+	ImNodes::DestroyContext();
 	ImGui::DestroyContext();
 
 	glfwDestroyWindow(Window);
@@ -1321,6 +1332,8 @@ void Frontend::Render() {
 	ImGui::Begin("Assets", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
 	ImGui::End();
 	*/
+
+	NodeEditor.DrawNodeEditor();
 
 	ImGui::Render();
 
