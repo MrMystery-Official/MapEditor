@@ -658,8 +658,8 @@ BymlFile::BymlFile(std::vector<unsigned char> Bytes)
         return;
     }
 
-    uint16_t Version = Reader.ReadUInt16(); //Version should be 7
-    if (Version != 0x07)
+    uint16_t Version = Reader.ReadUInt16(); //Version should be 7 or 2
+    if (Version != 0x07 && Version != 0x02)
     {
         std::cerr << "Expected version 7, but got " << Version << "!\n";
         return;

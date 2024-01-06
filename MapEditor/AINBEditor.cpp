@@ -179,13 +179,29 @@ void AINBEditor::SetNodePos(AINBFile::Node* Node, int WidthOffset, int HeightOff
 {
     ImNodes::SetNodeGridSpacePos(Node->EditorID, ImVec2(WidthOffset, HeightOffset));
 
+    int PreconditionHeight = HeightOffset;
+
     for (int i = 0; i < AINBFile::ValueTypeCount; i++)
     {
         for (AINBFile::InputEntry& Param : Node->InputParameters[i])
         {
             if (Param.NodeIndex == -1)
             {
-                ImNodes::SetNodeGridSpacePos(Param.EditorID + 1, ImVec2(WidthOffset, HeightOffset));
+                PreconditionHeight -= 70.0f;
+            }
+        }
+    }
+
+    int PreconditionHeightMax = PreconditionHeight - 70.0f;
+
+    for (int i = 0; i < AINBFile::ValueTypeCount; i++)
+    {
+        for (AINBFile::InputEntry& Param : Node->InputParameters[i])
+        {
+            if (Param.NodeIndex == -1)
+            {
+                ImNodes::SetNodeGridSpacePos(Param.EditorID + 1, ImVec2(WidthOffset - ImGui::CalcTextSize(("Precondition: " + Param.Name + " (" + AINBFile::StandardTypeToString(Param.ValueType) + ")").c_str()).x - 40.0f, PreconditionHeight));
+                PreconditionHeight += 70.0f;
             }
         }
     }
@@ -205,7 +221,7 @@ void AINBEditor::SetNodePos(AINBFile::Node* Node, int WidthOffset, int HeightOff
             NodeHeight += ImGui::CalcTextSize(Parameter.Name.c_str()).y;
             if (Parameter.NodeIndex == -1)
             {
-                PreconditionMaxWidth = std::max(PreconditionMaxWidth, ImGui::CalcTextSize(("Precondition: " + Parameter.Name + " (" + AINBFile::StandardTypeToString(Parameter.ValueType) + ")").c_str()).x);
+                PreconditionMaxWidth = std::max(PreconditionMaxWidth, ImGui::CalcTextSize(("Precondition: " + Parameter.Name + " (" + AINBFile::StandardTypeToString(Parameter.ValueType) + ")").c_str()).x + 50.0f);
             }
         }
         for (int j = 0; j < Node->ImmediateParameters[i].size(); j++)
@@ -243,6 +259,7 @@ void AINBEditor::SetNodePos(AINBFile::Node* Node, int WidthOffset, int HeightOff
         }
     }
 
+    NodeHeight -= PreconditionHeightMax - 20.0f;
 
     WidthOffset += WidthInput + WidthOutput + 114.0f + PreconditionMaxWidth;
 
@@ -269,7 +286,7 @@ void AINBEditor::DrawNodeEditor()
 
     if (ImGui::Button("Save"))
     {
-        this->m_File.Write("H:/Paul/switchemulator/Zelda TotK/MapEditorV3/Workspace/LogicWriter/Editor.ainb");
+        this->m_File.Write("");
     }
 
     ImNodes::BeginNodeEditor();
@@ -429,7 +446,7 @@ AINBEditor::AINBEditor(std::string Path)
 {
     this->m_File = AINBFile(Path);
 
-    ImNodes::PushAttributeFlag(ImNodesAttributeFlags_EnableLinkDetachWithDragClick);
+    //ImNodes::PushAttributeFlag(ImNodesAttributeFlags_EnableLinkDetachWithDragClick);
 
     ImNodesStyle& style = ImNodes::GetStyle();
     style.Flags |= ImNodesStyleFlags_GridLinesPrimary | ImNodesStyleFlags_GridSnapping;

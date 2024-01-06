@@ -231,6 +231,8 @@ void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActo
 	camera = Camera(WIDTH, HEIGHT, glm::vec3(0.0f, 0.0f, 2.0f));
 
 	NodeEditor = AINBEditor(Config::GetRomFSFile("Logic/Dungeon001_1800.logic.root.ainb"));
+
+	//LoadedDungeon = true;
 }
 
 void Frontend::CleanUp() {
@@ -428,7 +430,8 @@ void Frontend::Render() {
 		&& !StackActorsPopUp.IsOpen()
 		&& !ExportModPopUp.IsOpen()
 		&& !AddLinkPopUp.IsOpen()
-		&& !AddRailPopUp.IsOpen())
+		&& !AddRailPopUp.IsOpen()
+		&& ImGui::IsWindowFocused())
 	{
 		CheckActorSelection(ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), ImVec2(ImGui::GetMousePos().x - ImGui::GetWindowPos().x - ImGui::GetWindowContentRegionMin().x,
 			ImGui::GetMousePos().y - ImGui::GetWindowPos().y - ImGui::GetWindowContentRegionMin().y));
@@ -1327,6 +1330,7 @@ void Frontend::Render() {
 
 	//AINB Drawing
 	ImGui::Begin("AINB Node Editor");
+	if (ImGui::IsWindowFocused()) PickedActorId = -1;
 	NodeEditor.DrawNodeEditor();
 	ImGui::End();
 
@@ -1346,6 +1350,9 @@ void Frontend::Render() {
 		ImGui::DockBuilderDockWindow("Actor", DockRight);
 
 		ImGui::DockBuilderFinish(DockSpace);
+
+		ImGui::SetWindowFocus("Map View");
+
 		FirstFrame = false;
 	}
 
