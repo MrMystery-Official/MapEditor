@@ -25,6 +25,8 @@ std::vector<Actor>* Actors;
 
 int PickedActorId = -1;
 
+bool FirstFrame = true;
+
 struct RenderSettingsStruct
 {
 	bool Invisible = true;
@@ -155,8 +157,6 @@ float Max(float a, float b) {
 	return a > b ? a : b;
 }
 
-AINBEditor NodeEditor;
-
 void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActors) {
 	Actors = &LocalActors;
 	LoadedEConfig = LoadedEditorConfig;
@@ -227,12 +227,6 @@ void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActo
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	camera = Camera(WIDTH, HEIGHT, glm::vec3(0.0f, 0.0f, 2.0f));
-
-	NodeEditor = AINBEditor(Config::GetRomFSFile("Logic/Dungeon001_1800.logic.root.ainb"));
-
-	//TODO: REMOVE
-	LoadedDungeon = true;
-	LoadedEConfig = true;
 }
 
 void Frontend::CleanUp() {
@@ -386,13 +380,11 @@ void Frontend::Render() {
 
 	ImGui::NewFrame();
 
-	ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+	ImGuiID DockSpace = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
 	//ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
 
-	ImGui::SetNextWindowPos(ImVec2(width * 0.18, 0));
-	ImGui::SetNextWindowSize(ImVec2(width * 0.64, height));
-	ImGui::Begin("Viewport", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+	ImGui::Begin("Main");
 
 	const float window_width = ImGui::GetContentRegionAvail().x;
 	const float window_height = ImGui::GetContentRegionAvail().y;
@@ -441,9 +433,7 @@ void Frontend::Render() {
 	ImGui::End();
 
 	//Left window with options and actions
-	ImGui::SetNextWindowPos(ImVec2(0, 0));
-	ImGui::SetNextWindowSize(ImVec2(width * 0.18, height));
-	ImGui::Begin("Actions", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+	ImGui::Begin("Actions");
 
 	if (ImGui::Button("Add Actor"))
 	{
@@ -771,9 +761,7 @@ void Frontend::Render() {
 	ImGui::End();
 
 	//Actor properties window
-	ImGui::SetNextWindowPos(ImVec2(width * 0.82, 0));
-	ImGui::SetNextWindowSize(ImVec2(width * 0.18, height));
-	ImGui::Begin("Actor", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoNavFocus);
+	ImGui::Begin("Actor");
 
 	if (PickedActorId != -1)
 	{
@@ -1333,7 +1321,25 @@ void Frontend::Render() {
 	ImGui::End();
 	*/
 
-	NodeEditor.DrawNodeEditor();
+	//AINB Drawing
+
+	if (FirstFrame)
+	{
+		ImGui::DockBuilderRemoveNode(DockSpace);
+		ImGui::DockBuilderAddNode(DockSpace, ImGuiDockNodeFlags_DockSpace);
+		ImGui::DockBuilderSetNodeSize(DockSpace, ImGui::GetMainViewport()->Size);
+
+		ImGuiID DockLeft, DockMiddle, DockRight;
+		ImGui::DockBuilderSplitNode(DockSpace, ImGuiDir_Left, 0.2f, &DockLeft, &DockMiddle);
+		ImGui::DockBuilderSplitNode(DockMiddle, ImGuiDir_Right, 0.25f, &DockRight, &DockMiddle);
+
+		ImGui::DockBuilderDockWindow("Actions", DockLeft);
+		ImGui::DockBuilderDockWindow("Main", DockMiddle);
+		ImGui::DockBuilderDockWindow("Actor", DockRight);
+
+		ImGui::DockBuilderFinish(DockSpace);
+		FirstFrame = false;
+	}
 
 	ImGui::Render();
 
