@@ -27,6 +27,8 @@ int PickedActorId = -1;
 
 bool FirstFrame = true;
 
+AINBEditor NodeEditor;
+
 struct RenderSettingsStruct
 {
 	bool Invisible = true;
@@ -227,6 +229,8 @@ void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActo
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	camera = Camera(WIDTH, HEIGHT, glm::vec3(0.0f, 0.0f, 2.0f));
+
+	NodeEditor = AINBEditor(Config::GetRomFSFile("Logic/Dungeon001_1800.logic.root.ainb"));
 }
 
 void Frontend::CleanUp() {
@@ -384,7 +388,7 @@ void Frontend::Render() {
 
 	//ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
 
-	ImGui::Begin("Main");
+	ImGui::Begin("Map View");
 
 	const float window_width = ImGui::GetContentRegionAvail().x;
 	const float window_height = ImGui::GetContentRegionAvail().y;
@@ -1322,6 +1326,9 @@ void Frontend::Render() {
 	*/
 
 	//AINB Drawing
+	ImGui::Begin("AINB Node Editor");
+	NodeEditor.DrawNodeEditor();
+	ImGui::End();
 
 	if (FirstFrame)
 	{
@@ -1334,7 +1341,8 @@ void Frontend::Render() {
 		ImGui::DockBuilderSplitNode(DockMiddle, ImGuiDir_Right, 0.25f, &DockRight, &DockMiddle);
 
 		ImGui::DockBuilderDockWindow("Actions", DockLeft);
-		ImGui::DockBuilderDockWindow("Main", DockMiddle);
+		ImGui::DockBuilderDockWindow("Map View", DockMiddle);
+		ImGui::DockBuilderDockWindow("AINB Node Editor", DockMiddle);
 		ImGui::DockBuilderDockWindow("Actor", DockRight);
 
 		ImGui::DockBuilderFinish(DockSpace);

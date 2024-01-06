@@ -265,8 +265,6 @@ void AINBEditor::SetNodePos(AINBFile::Node* Node, int WidthOffset, int HeightOff
 
 void AINBEditor::DrawNodeEditor()
 {
-    ImGui::Begin("AINB Editor");
-
     bool WantAutoLayout = ImGui::Button("Auto layout");
 
     if (ImGui::Button("Save"))
@@ -425,8 +423,6 @@ void AINBEditor::DrawNodeEditor()
             }
         }
     }
-
-    ImGui::End();
 }
 
 AINBEditor::AINBEditor(std::string Path)
