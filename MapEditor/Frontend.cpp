@@ -245,6 +245,7 @@ void Frontend::CleanUp() {
 		Tex.Delete();
 	}
 	TextureShader.Delete();
+	PickingShader.Delete();
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImNodes::DestroyContext();
