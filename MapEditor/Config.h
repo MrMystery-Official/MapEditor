@@ -17,7 +17,7 @@ namespace Config
 	extern std::string InternalGameVersion;
 	extern std::string ExportPath;
 
-	std::string GetRomFSFile(std::string LocalPath);
+	std::string GetRomFSFile(std::string LocalPath, bool Replaceable = true);
 	std::string GetBfresFile(std::string Name);
 	std::string GetTextureFile(std::string TextureName);
 	std::string GetWorkingDirFile(std::string Path);

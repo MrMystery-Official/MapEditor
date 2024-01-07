@@ -232,7 +232,7 @@ void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActo
 
 	NodeEditor = AINBEditor(Config::GetRomFSFile("Logic/Dungeon001_1800.logic.root.ainb"));
 
-	//LoadedDungeon = true;
+	LoadedDungeon = true;
 }
 
 void Frontend::CleanUp() {
@@ -768,7 +768,7 @@ void Frontend::Render() {
 	ImGui::End();
 
 	//Actor properties window
-	ImGui::Begin("Actor");
+	ImGui::Begin("Properties");
 
 	if (PickedActorId != -1)
 	{
@@ -1347,7 +1347,7 @@ void Frontend::Render() {
 		ImGui::DockBuilderDockWindow("Actions", DockLeft);
 		ImGui::DockBuilderDockWindow("Map View", DockMiddle);
 		ImGui::DockBuilderDockWindow("AINB Node Editor", DockMiddle);
-		ImGui::DockBuilderDockWindow("Actor", DockRight);
+		ImGui::DockBuilderDockWindow("Properties", DockRight);
 
 		ImGui::DockBuilderFinish(DockSpace);
 

@@ -128,7 +128,7 @@ void AINBEditor::DrawPreconditionNode(AINBFile::InputEntry& Parameter)
     ImNodes::BeginNode(Parameter.EditorID + 1);
 
     ImNodes::BeginNodeTitleBar();
-    ImGui::TextUnformatted(("Precondition: " + Parameter.Name + " (" + AINBFile::StandardTypeToString(Parameter.ValueType) + ")").c_str());
+    ImGui::TextUnformatted(("Value: " + Parameter.Name + " (" + AINBFile::StandardTypeToString(Parameter.ValueType) + ")").c_str());
     ImNodes::EndNodeTitleBar();
 
     ImNodes::BeginOutputAttribute(Parameter.EditorID + 2);
@@ -138,21 +138,20 @@ void AINBEditor::DrawPreconditionNode(AINBFile::InputEntry& Parameter)
     switch (Parameter.ValueType)
     {
     case (int)AINBFile::ValueType::Bool:
-        ImGui::Indent(ImGui::CalcTextSize(("Precondition: " + Parameter.Name + " (" + AINBFile::StandardTypeToString(Parameter.ValueType) + ")").c_str()).x - 16.0f);
+        ImGui::Indent(ImGui::CalcTextSize(("Value: " + Parameter.Name + " (" + AINBFile::StandardTypeToString(Parameter.ValueType) + ")").c_str()).x - 16.0f);
         ImGui::Checkbox(("##" + Parameter.Name).c_str(), reinterpret_cast<bool*>(&Parameter.Value));
         break;
     case (int)AINBFile::ValueType::Float:
-        ImGui::Indent(ImGui::CalcTextSize(("Precondition: " + Parameter.Name + " (" + AINBFile::StandardTypeToString(Parameter.ValueType) + ")").c_str()).x - 200.0f);
+        ImGui::PushItemWidth(ImGui::CalcTextSize(("Value: " + Parameter.Name + " (" + AINBFile::StandardTypeToString(Parameter.ValueType) + ")").c_str()).x);
         ImGui::InputScalar(("##" + Parameter.Name).c_str(), ImGuiDataType_::ImGuiDataType_Float, &Parameter.Value);
         break;
     case (int)AINBFile::ValueType::Int:
-        ImGui::Indent(ImGui::CalcTextSize(("Precondition: " + Parameter.Name + " (" + AINBFile::StandardTypeToString(Parameter.ValueType) + ")").c_str()).x - 200.0f);
-        ImGui::PushItemWidth(200.0f);
+        ImGui::PushItemWidth(ImGui::CalcTextSize(("Value: " + Parameter.Name + " (" + AINBFile::StandardTypeToString(Parameter.ValueType) + ")").c_str()).x);
         ImGui::InputScalar(("##" + Parameter.Name).c_str(), ImGuiDataType_::ImGuiDataType_U32, &Parameter.Value);
         ImGui::PopItemWidth();
         break;
     case (int)AINBFile::ValueType::String:
-        ImGui::PushItemWidth(ImGui::CalcTextSize(("Precondition: " + Parameter.Name + " (" + AINBFile::StandardTypeToString(Parameter.ValueType) + ")").c_str()).x);
+        ImGui::PushItemWidth(ImGui::CalcTextSize(("Value: " + Parameter.Name + " (" + AINBFile::StandardTypeToString(Parameter.ValueType) + ")").c_str()).x);
         ImGui::InputText(("##" + Parameter.Name).c_str(), reinterpret_cast<std::string*>(&Parameter.Value));
         ImGui::PopItemWidth();
         break;
@@ -200,7 +199,7 @@ void AINBEditor::SetNodePos(AINBFile::Node* Node, int WidthOffset, int HeightOff
         {
             if (Param.NodeIndex == -1)
             {
-                ImNodes::SetNodeGridSpacePos(Param.EditorID + 1, ImVec2(WidthOffset - ImGui::CalcTextSize(("Precondition: " + Param.Name + " (" + AINBFile::StandardTypeToString(Param.ValueType) + ")").c_str()).x - 40.0f, PreconditionHeight));
+                ImNodes::SetNodeGridSpacePos(Param.EditorID + 1, ImVec2(WidthOffset - ImGui::CalcTextSize(("Value: " + Param.Name + " (" + AINBFile::StandardTypeToString(Param.ValueType) + ")").c_str()).x - 40.0f, PreconditionHeight));
                 PreconditionHeight += 70.0f;
             }
         }
@@ -221,7 +220,7 @@ void AINBEditor::SetNodePos(AINBFile::Node* Node, int WidthOffset, int HeightOff
             NodeHeight += ImGui::CalcTextSize(Parameter.Name.c_str()).y;
             if (Parameter.NodeIndex == -1)
             {
-                PreconditionMaxWidth = std::max(PreconditionMaxWidth, ImGui::CalcTextSize(("Precondition: " + Parameter.Name + " (" + AINBFile::StandardTypeToString(Parameter.ValueType) + ")").c_str()).x + 50.0f);
+                PreconditionMaxWidth = std::max(PreconditionMaxWidth, ImGui::CalcTextSize(("Value: " + Parameter.Name + " (" + AINBFile::StandardTypeToString(Parameter.ValueType) + ")").c_str()).x + 50.0f);
             }
         }
         for (int j = 0; j < Node->ImmediateParameters[i].size(); j++)
@@ -263,13 +262,17 @@ void AINBEditor::SetNodePos(AINBFile::Node* Node, int WidthOffset, int HeightOff
 
     WidthOffset += WidthInput + WidthOutput + 114.0f + PreconditionMaxWidth;
 
+    std::cout << "Node: " << Node->NodeIndex << ", " << Node->Name << std::endl;
+
     for (AINBFile::Node& NLink : this->m_File.Nodes)
     {
+        std::cout << "NODE: " << NLink.NodeIndex << std::endl;
         for (int i = 0; i < this->m_File.ValueTypeCount; i++)
         {
             for (int j = 0; j < NLink.InputParameters[i].size(); j++)
             {
                 AINBFile::InputEntry Parameter = NLink.InputParameters[i][j];
+                std::cout << "Param Node Index: " << Parameter.NodeIndex << ", Node Index: " << Node->NodeIndex << std::endl;
                 if (Parameter.NodeIndex == Node->NodeIndex)
                 {
                     SetNodePos(&NLink, WidthOffset, HeightOffset);
@@ -280,13 +283,148 @@ void AINBEditor::SetNodePos(AINBFile::Node* Node, int WidthOffset, int HeightOff
     }
 }
 
+ImGuiPopUp AddAINBNodePopUp("Add node", 500, 210, 1);
+
+bool VectorOfStringGetter(void* data, int n, const char** out_text)
+{
+    const std::vector<std::string>* v = (std::vector<std::string>*)data;
+    *out_text = v->at(n).c_str();
+    return true;
+}
+
 void AINBEditor::DrawNodeEditor()
 {
     bool WantAutoLayout = ImGui::Button("Auto layout");
+    ImGui::SameLine();
+    bool WantDeleteSelected = ImGui::Button("Delete Selected");
+    ImGui::SameLine();
+    if (ImGui::Button("Add node"))
+    {
+        AddAINBNodePopUp.IsOpen() = true;
+    }
+    if (AddAINBNodePopUp.IsCompleted())
+    {
+
+        AINBFile::Node Node;
+        Node.NodeIndex = this->m_File.Nodes.size();
+        Node.Type = (uint16_t)AINBFile::NodeTypes::UserDefined;
+        Node.AttachmentCount = 0;
+        Node.Name = AddAINBNodePopUp.GetData()[0];
+        Node.EditorID = CurrentID++;
+
+        Node.InputParameters.resize(6);
+        Node.OutputParameters.resize(6);
+        Node.ImmediateParameters.resize(6);
+
+        AINBNodeDefinitions::NodeDefinition* Definition = AINBNodeDefinitions::GetNodeDefinition(Node.Name);
+
+        if (Definition != nullptr)
+        {
+            Node.NameHash = Definition->NameHash;
+            Node.Type = Definition->Type;
+            for (int Type = 0; Type < AINBFile::ValueTypeCount; Type++)
+            {
+                for (AINBNodeDefinitions::NodeDefinitionOutputParameter Param : Definition->OutputParameters[Type])
+                {
+                    AINBFile::OutputEntry Entry;
+                    Entry.Name = Param.Name;
+                    Entry.Class = Param.Class;
+                    Entry.SetPointerFlagsBitZero = Param.SetPointerFlagsBitZero;
+                    Entry.EditorID = CurrentID++;
+                    Node.OutputParameters[Type].push_back(Entry);
+                }
+                for (AINBNodeDefinitions::NodeDefinitionImmediateParameter Param : Definition->ImmediateParameters[Type])
+                {
+                    AINBFile::ImmediateParameter Entry;
+                    Entry.Name = Param.Name;
+                    Entry.Class = Param.Class;
+                    Entry.ValueType = (int)Param.ValueType;
+                    switch (Param.ValueType)
+                    {
+                    case AINBFile::ValueType::Bool:
+                        Entry.Value = false;
+                        break;
+                    case AINBFile::ValueType::Int:
+                        Entry.Value = (uint32_t)0;
+                        break;
+                    case AINBFile::ValueType::Float:
+                        Entry.Value = 0.0f;
+                        break;
+                    case AINBFile::ValueType::String:
+                        Entry.Value = "None";
+                        break;
+                    case AINBFile::ValueType::Vec3f:
+                        Entry.Value = Vector3F(0.0f, 0.0f, 0.0f);
+                        break;
+                    }
+                    Node.ImmediateParameters[Type].push_back(Entry);
+                }
+                for (AINBNodeDefinitions::NodeDefinitionInputParameter Param : Definition->InputParameters[Type])
+                {
+                    AINBFile::InputEntry Entry;
+                    Entry.Name = Param.Name;
+                    Entry.NodeIndex = -1;
+                    Entry.ParameterIndex = -1;
+                    Entry.Class = Param.Class;
+                    Entry.ValueType = (int)Param.ValueType;
+                    Entry.Value = Param.Value;
+                    Entry.EditorID = CurrentID++;
+                    CurrentID += 3;
+                    Node.InputParameters[Type].push_back(Entry);
+                }
+            }
+
+            this->m_File.Nodes.push_back(Node);
+        }
+
+        AddAINBNodePopUp.Reset();
+    }
+    if (AddAINBNodePopUp.IsOpen())
+    {
+            this->m_NodeNames.clear();
+            for (AINBNodeDefinitions::NodeDefinition Def : AINBNodeDefinitions::NodeDefinitions)
+            {
+                if (Def.Name.find(AddAINBNodePopUp.GetData()[0]) != std::string::npos)
+                {
+                    this->m_NodeNames.push_back(Def.Name);
+                }
+            }
+
+        AddAINBNodePopUp.Begin();
+        if (AddAINBNodePopUp.BeginPopupModal())
+        {
+            ImGui::InputText("Search", &AddAINBNodePopUp.GetData()[0]);
+
+            int selected = 0;
+
+            if (ImGui::ListBox("##ListBox", &selected,
+                [](void* vec, int idx, const char** out_text) {
+                    std::vector<std::string>* vector = reinterpret_cast<std::vector<std::string>*>(vec);
+                    if (idx < 0 || idx >= vector->size())return false;
+                    *out_text = vector->at(idx).c_str();
+                    return true;
+                }, reinterpret_cast<void*>(&this->m_NodeNames), this->m_NodeNames.size()))
+            {
+                AddAINBNodePopUp.GetData()[0] = this->m_NodeNames[selected];
+            }
+
+            if (ImGui::Button("Add"))
+            {
+                AddAINBNodePopUp.IsOpen() = false;
+                AddAINBNodePopUp.IsCompleted() = true;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Return"))
+            {
+                AddAINBNodePopUp.Reset();
+            }
+        }
+        AddAINBNodePopUp.End();
+    }
 
     if (ImGui::Button("Save"))
     {
-        this->m_File.Write("");
+        this->m_File.Write(Config::GetWorkingDirFile(this->m_File.Header.FileName + ".ainb"));
     }
 
     ImNodes::BeginNodeEditor();
@@ -298,6 +436,7 @@ void AINBEditor::DrawNodeEditor()
 
     for (AINBFile::Node& Node : this->m_File.Nodes)
     {
+        Node.PreconditionCount = 0;
         for (int i = 0; i < AINBFile::ValueTypeCount; i++)
         {
             for (AINBFile::InputEntry& Param : Node.InputParameters[i])
@@ -305,6 +444,7 @@ void AINBEditor::DrawNodeEditor()
                 if (Param.NodeIndex == -1)
                 {
                     DrawPreconditionNode(Param);
+                    Node.PreconditionCount++;
                 }
             }
         }
@@ -312,6 +452,7 @@ void AINBEditor::DrawNodeEditor()
 
     if (WantAutoLayout)
     {
+        std::cout << "LAYOUT\n";
         AINBFile::Node* Entry = &this->m_File.Nodes[0];
 
         for (AINBFile::Node& Node : this->m_File.Nodes)
@@ -372,6 +513,101 @@ void AINBEditor::DrawNodeEditor()
 
     ImNodes::EndNodeEditor();
 
+    int NumSelectedNodes = ImNodes::NumSelectedNodes();
+    if (NumSelectedNodes > 0 && WantDeleteSelected)
+    {
+        std::vector<int> SelectedNodeIDs(NumSelectedNodes);
+        ImNodes::GetSelectedNodes(SelectedNodeIDs.data());
+
+        for (int NodeID : SelectedNodeIDs)
+        {
+            AINBFile::Node Node;
+
+            for (AINBFile::Node NodeDel : this->m_File.Nodes)
+            {
+                if (NodeDel.EditorID == NodeID)
+                {
+                    Node = NodeDel;
+                    break;
+                }
+            }
+
+            std::vector<AINBFile::Node>::iterator Iter;
+            for (Iter = this->m_File.Nodes.begin(); Iter != this->m_File.Nodes.end(); ) {
+
+                for (int i = 0; i < AINBFile::ValueTypeCount; i++)
+                {
+                    for (AINBFile::InputEntry& Param : Iter->InputParameters[i])
+                    {
+                        if (Param.NodeIndex == Node.NodeIndex) //Normal Link
+                        {
+                            Param.NodeIndex = -1;
+                            Param.ParameterIndex = -1;
+                        }
+                    }
+                }
+
+                if (Iter->EditorID == NodeID)
+                    Iter = this->m_File.Nodes.erase(Iter);
+                else
+                    Iter++;
+            }
+        }
+
+        //Rebuilding Indexes
+
+        std::map<int, int> IndexMap;
+
+        for (int i = 0; i < this->m_File.Nodes.size(); i++)
+        {
+            IndexMap.insert({ this->m_File.Nodes[i].NodeIndex, i });
+            this->m_File.Nodes[i].NodeIndex = i;
+        }
+        for (AINBFile::Node& Node : this->m_File.Nodes)
+        {
+            for (int i = 0; i < AINBFile::LinkedNodeTypeCount; i++)
+            {
+                for (AINBFile::LinkedNodeInfo& Info : Node.LinkedNodes[i])
+                {
+                    Info.NodeIndex = IndexMap[Info.NodeIndex];
+                }
+            }
+            for (int i = 0; i < AINBFile::ValueTypeCount; i++)
+            {
+                for (AINBFile::InputEntry& Param : Node.InputParameters[i])
+                {
+                    if (Param.NodeIndex != -1) Param.NodeIndex = IndexMap[Param.NodeIndex];
+                }
+            }
+        }
+    }
+
+    int NumSelectedLink = ImNodes::NumSelectedLinks();
+    if (NumSelectedLink > 0 && WantDeleteSelected)
+    {
+        std::vector<int> SelectedLinkIDs(NumSelectedLink);
+        ImNodes::GetSelectedLinks(SelectedLinkIDs.data());
+
+        for (int LinkID : SelectedLinkIDs)
+        {
+            for (AINBFile::Node& Node : this->m_File.Nodes)
+            {
+                for (int i = 0; i < AINBFile::ValueTypeCount; i++)
+                {
+                    for (AINBFile::InputEntry& Param : Node.InputParameters[i])
+                    {
+                        if (LinkID == Param.EditorID + 1)
+                        {
+                            Param.NodeIndex = -1;
+                            Param.ParameterIndex = -1;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     {
         int StartID = 0;
         int EndID = 0;
@@ -397,8 +633,8 @@ void AINBEditor::DrawNodeEditor()
                     if (Found) break;
                 }
                 if (Found) break;
-                DestNodeIndex++;
                 DestParamIndex = 0;
+                DestNodeIndex++;
             }
 
             for (AINBFile::Node& Node : this->m_File.Nodes)
@@ -411,6 +647,18 @@ void AINBEditor::DrawNodeEditor()
                         {
                             Param.NodeIndex = DestNodeIndex;
                             Param.ParameterIndex = DestParamIndex;
+
+                            /*
+                            for (int LinkType = 0; LinkType < AINBFile::LinkedNodeTypeCount; LinkType++)
+                            {
+                                for (AINBFile::LinkedNodeInfo& Info : Node.LinkedNodes[LinkType])
+                                {
+                                    Info.NodeIndex = DestNodeIndex;
+                                    Info.Parameter = Param.Name;
+                                }
+                            }
+                            */
+
                             break;
                         }
                     }
@@ -419,6 +667,7 @@ void AINBEditor::DrawNodeEditor()
         }
     }
 
+    /*
     {
         int EditorID;
         if (ImNodes::IsLinkDestroyed(&EditorID))
@@ -440,32 +689,29 @@ void AINBEditor::DrawNodeEditor()
             }
         }
     }
+    */
 }
 
 AINBEditor::AINBEditor(std::string Path)
 {
     this->m_File = AINBFile(Path);
 
-    //ImNodes::PushAttributeFlag(ImNodesAttributeFlags_EnableLinkDetachWithDragClick);
-
     ImNodesStyle& style = ImNodes::GetStyle();
     style.Flags |= ImNodesStyleFlags_GridLinesPrimary | ImNodesStyleFlags_GridSnapping;
 
-    int ID = 0;
-
     for (AINBFile::Node& Node : this->m_File.Nodes)
     {
-        Node.EditorID = ID++;
+        Node.EditorID = CurrentID++;
         for (int i = 0; i < AINBFile::ValueTypeCount; i++)
         {
             for (AINBFile::InputEntry& Param : Node.InputParameters[i])
             {
-                Param.EditorID = ID++;
-                ID += 3;
+                Param.EditorID = CurrentID++;
+                CurrentID += 3;
             }
             for (AINBFile::OutputEntry& Param : Node.OutputParameters[i])
             {
-                Param.EditorID = ID++;
+                Param.EditorID = CurrentID++;
             }
         }
     }

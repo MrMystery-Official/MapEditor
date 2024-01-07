@@ -164,6 +164,7 @@
     <ClCompile Include="Actor.cpp" />
     <ClCompile Include="AINB.cpp" />
     <ClCompile Include="AINBEditor.cpp" />
+    <ClCompile Include="AINBNodeDefinitions.cpp" />
     <ClCompile Include="astc_decomp.cpp" />
     <ClCompile Include="Bfres.cpp" />
     <ClCompile Include="BinaryVectorReader.cpp" />
@@ -208,6 +209,7 @@
     <ClInclude Include="Actor.h" />
     <ClInclude Include="AINB.h" />
     <ClInclude Include="AINBEditor.h" />
+    <ClInclude Include="AINBNodeDefinitions.h" />
     <ClInclude Include="astc_decomp.h" />
     <ClInclude Include="Bfres.h" />
     <ClInclude Include="BinaryVectorReader.h" />

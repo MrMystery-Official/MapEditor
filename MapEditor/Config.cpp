@@ -18,9 +18,9 @@ std::string Config::GetWorkingDirFile(std::string Path)
 	return WorkingDir + "/" + Path;
 }
 
-std::string Config::GetRomFSFile(std::string LocalPath)
+std::string Config::GetRomFSFile(std::string LocalPath, bool Replaceable)
 {
-	if (Util::FileExists(Config::GetWorkingDirFile("Save/" + LocalPath)))
+	if (Util::FileExists(Config::GetWorkingDirFile("Save/" + LocalPath)) && Replaceable)
 	{
 		return Config::GetWorkingDirFile("Save/" + LocalPath);
 	}

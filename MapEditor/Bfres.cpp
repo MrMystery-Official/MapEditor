@@ -610,6 +610,10 @@ BfresFile::BfresFile(std::string Path, std::vector<unsigned char> Bytes)
                     this->m_Models[FMDLIndex].Vertices[FVTXIndex][VertexIndex * 3 + 1] = this->UInt32ToFloat(VertexBuffers[0].Data[VertexIndex * VertexBuffers[0].Stride + 4], VertexBuffers[0].Data[VertexIndex * VertexBuffers[0].Stride + 5], VertexBuffers[0].Data[VertexIndex * VertexBuffers[0].Stride + 6], VertexBuffers[0].Data[VertexIndex * VertexBuffers[0].Stride + 7]);
                     this->m_Models[FMDLIndex].Vertices[FVTXIndex][VertexIndex * 3 + 2] = this->UInt32ToFloat(VertexBuffers[0].Data[VertexIndex * VertexBuffers[0].Stride + 8], VertexBuffers[0].Data[VertexIndex * VertexBuffers[0].Stride + 9], VertexBuffers[0].Data[VertexIndex * VertexBuffers[0].Stride + 10], VertexBuffers[0].Data[VertexIndex * VertexBuffers[0].Stride + 11]);
                 }
+                /*
+                if(Path.find("HyruleCastleGround") != std::string::npos)
+                    std::cout << "Vertice: " << this->m_Models[FMDLIndex].Vertices[FVTXIndex][VertexIndex * 3] << ", " << this->m_Models[FMDLIndex].Vertices[FVTXIndex][VertexIndex * 3 + 1] << ", " << this->m_Models[FMDLIndex].Vertices[FVTXIndex][VertexIndex * 3 + 2] << std::endl;
+                */
             }
 
             uint32_t AttributeSegmentSize = 0;

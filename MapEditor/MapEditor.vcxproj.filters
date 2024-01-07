@@ -204,6 +204,9 @@
     <ClCompile Include="imgui_node_editor\imnodes.cpp">
       <Filter>Source Files\imgui_node_editor</Filter>
     </ClCompile>
+    <ClCompile Include="AINBNodeDefinitions.cpp">
+      <Filter>Source Files\editor\ainb</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imconfig.h">
@@ -331,6 +334,9 @@
     </ClInclude>
     <ClInclude Include="imgui_node_editor\imnodes.h">
       <Filter>Header Files\imgui_node_editor</Filter>
+    </ClInclude>
+    <ClInclude Include="AINBNodeDefinitions.h">
+      <Filter>Header Files\file\ainb</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

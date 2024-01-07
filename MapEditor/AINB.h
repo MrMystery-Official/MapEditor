@@ -316,7 +316,7 @@ file_category = {"AI" : 0, "Logic" : 1, "Sequence" : 2}
 	std::vector<uint32_t> AttachmentArray;
 	bool IsReplaced;
 
-	std::string ReadStringFromStringPool(BinaryVectorReader* Reader, int Offset);
+	std::string ReadStringFromStringPool(BinaryVectorReader* Reader, uint32_t Offset);
 	GUIDData ReadGUID(BinaryVectorReader* Reader);
 	Node& GetBaseNode();
 	static std::string StandardTypeToString(int Type);

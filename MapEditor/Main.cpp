@@ -4,6 +4,7 @@
 #include "MapLoader.h"
 #include "EditorConfig.h"
 #include "AINB.h"
+#include "AINBNodeDefinitions.h"
 
 bool LoadEditorConfig()
 {
@@ -42,6 +43,8 @@ int main(int, char**)
         MapLoader::DetectInternalGameVersion();
         ZStdFile::Initialize(Config::GetRomFSFile("Pack/ZsDic.pack.zs"));
         ActorModelLibrary::Initialize();
+        //AINBNodeDefinitions::Generate();
+        AINBNodeDefinitions::Initialize();
 
         //AINBFile AINB(Config::GetRomFSFile("Logic/Dungeon001_42a6.logic.root.ainb"));
     }

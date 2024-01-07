@@ -1,6 +1,6 @@
 #include "AINB.h"
 
-std::string AINBFile::ReadStringFromStringPool(BinaryVectorReader* Reader, int Offset) {
+std::string AINBFile::ReadStringFromStringPool(BinaryVectorReader* Reader, uint32_t Offset) {
 	int BaseOffset = Reader->GetPosition();
 	Reader->Seek(Header.StringOffset + Offset, BinaryVectorReader::Position::Begin);
 	std::string Result;
@@ -292,7 +292,7 @@ AINBFile::AINBFile(std::vector<unsigned char> Bytes) {
 					Parameter.Value = Reader.ReadUInt32();
 				}
 				if (i == 1) { //bool
-					Parameter.Value = Reader.ReadUInt8();
+					Parameter.Value = (bool)Reader.ReadUInt32();
 				}
 				if (i == 2) { //float
 					Parameter.Value = Reader.ReadFloat();
@@ -338,7 +338,7 @@ AINBFile::AINBFile(std::vector<unsigned char> Bytes) {
 					Parameter.Value = Reader.ReadUInt32();
 				}
 				if (i == 1) { //bool
-					Parameter.Value = Reader.ReadUInt8();
+					Parameter.Value = (bool)Reader.ReadUInt32();
 				}
 				if (i == 2) { //float
 					Parameter.Value = Reader.ReadFloat();
@@ -917,19 +917,17 @@ std::vector<unsigned char> AINBFile::ToBinary()
 	uint32_t PreconditionNodeCount = 0;
 	for (AINBFile::Node& Node : this->Nodes)
 	{
-		bool Found = false;
+		Node.PreconditionCount = 0;
 		for (int i = 0; i < AINBFile::ValueTypeCount; i++)
 		{
 			for (AINBFile::InputEntry& Param : Node.InputParameters[i])
 			{
-				if (Param.NodeIndex == -1)
+				if (Param.NodeIndex != -1)
 				{
 					PreconditionNodeCount++;
-					Found = true;
-					break;
+					Node.PreconditionCount++;
 				}
 			}
-			if (Found) break;
 		}
 	}
 	Writer.WriteInteger(PreconditionNodeCount, sizeof(uint32_t));
@@ -987,9 +985,41 @@ std::vector<unsigned char> AINBFile::ToBinary()
 	std::vector<uint32_t> AttachmentIndices;
 	std::vector<AINBFile::MultiEntry> Multis;
 	std::map<uint16_t, uint16_t> PreconditionNodes;
+	int BasePreconditionOffset = 0;
 
-	for (AINBFile::Node Node : this->Nodes)
+	AINBFile::GUIDData BaseGUID;
+	BaseGUID.Part1 = 0xc29b7607;
+	BaseGUID.Part2 = 0xf76a;
+	BaseGUID.Part3 = 0x4997;
+	BaseGUID.Part4 = 0xf893;
+	BaseGUID.Part5[0] = 0xb8;
+	BaseGUID.Part5[1] = 0x87;
+	BaseGUID.Part5[2] = 0x81;
+	BaseGUID.Part5[3] = 0xca;
+	BaseGUID.Part5[4] = 0x8c;
+	BaseGUID.Part5[5] = 0x65;
+
+	for (AINBFile::Node& Node : this->Nodes)
 	{
+		Node.GUID = BaseGUID;
+		BaseGUID.Part1++;
+		Node.BasePreconditionNode = BasePreconditionOffset;
+		if (Node.Name.find(".module") != std::string::npos)
+		{
+			bool FoundExternalAINBFlag = false;
+			for (AINBFile::FlagsStruct Flag : Node.Flags)
+			{
+				if (Flag == AINBFile::FlagsStruct::IsExternalAINB)
+				{
+					FoundExternalAINBFlag = true;
+					break;
+				}
+			}
+			if (!FoundExternalAINBFlag)
+			{
+				Node.Flags.push_back(AINBFile::FlagsStruct::IsExternalAINB);
+			}
+		}
 		AddToStringTable(Node.Name, StringTable);
 		AttachCounts.insert({ Node.NodeIndex, Node.Attachments.size()});
 		for (AINBFile::AttachmentEntry Entry : Node.Attachments)
@@ -1044,13 +1074,71 @@ std::vector<unsigned char> AINBFile::ToBinary()
 						if (!Found) Multis.push_back(Entry);
 					}
 				}
+				if (Param.NodeIndex != -1) //Input param is linked to other node, TODO: Multiple precondition nodes
+				{
+					PreconditionNodes.insert({ BasePreconditionOffset, Param.NodeIndex });
+					BasePreconditionOffset++;
+
+					bool FoundPreconditionFlag = false;
+					for (AINBFile::FlagsStruct Flag : Node.Flags)
+					{
+						if (Flag == AINBFile::FlagsStruct::IsPreconditionNode)
+						{
+							FoundPreconditionFlag = true;
+							break;
+						}
+					}
+					if (!FoundPreconditionFlag)
+					{
+						Node.Flags.push_back(AINBFile::FlagsStruct::IsPreconditionNode);
+					}
+
+					bool FoundPreconditionFlagDest = false;
+					for (AINBFile::FlagsStruct Flag : this->Nodes[Param.NodeIndex].Flags)
+					{
+						if (Flag == AINBFile::FlagsStruct::IsPreconditionNode)
+						{
+							FoundPreconditionFlagDest = true;
+							break;
+						}
+					}
+					if (!FoundPreconditionFlagDest)
+					{
+						this->Nodes[Param.NodeIndex].Flags.push_back(AINBFile::FlagsStruct::IsPreconditionNode);
+					}
+
+					//Node Link
+					bool Found = false;
+					for (int LinkType = 0; LinkType < AINBFile::LinkedNodeTypeCount; LinkType++)
+					{
+						for (AINBFile::LinkedNodeInfo& Info : Node.LinkedNodes[LinkType])
+						{
+							if (Info.NodeIndex == Param.NodeIndex && Info.Parameter == Param.Name)
+							{
+								Found = true;
+								break;
+							}
+						}
+						if (Found) break;
+					}
+					if (!Found)
+					{
+						std::cout << "ADD NODE LINK\n";
+						AINBFile::LinkedNodeInfo Info;
+						Info.NodeIndex = Param.NodeIndex;
+						Info.Parameter = Param.Name;
+						Node.LinkedNodes[(int)AINBFile::LinkedNodeMapping::OutputBoolInputFloatInputLink].push_back(Info);
+					}
+				}
 			}
 		}
 
+		/*
 		for (int i = 0; i < Node.PreconditionNodes.size(); i++)
 		{
 			PreconditionNodes.insert({ Node.BasePreconditionNode + i, Node.PreconditionNodes[i]});
 		}
+		*/
 	}
 
 	bool GlobalParametersEmpty = true;
@@ -1247,6 +1335,8 @@ std::vector<unsigned char> AINBFile::ToBinary()
 				break;
 			}
 		}
+
+		std::cout << "Link Empty " << Node.Name << ": " << LinkedNodesEmpty << std::endl;
 
 		if (!ImmediateParametersEmpty)
 		{
@@ -2061,6 +2151,7 @@ std::vector<unsigned char> AINBFile::ToBinary()
 	{
 		for (int i = 0; i < PreconditionNodes.size(); i++)
 		{
+			std::cout << "WRITE PRECONDITION\n";
 			Writer.WriteInteger(PreconditionNodes[i], sizeof(uint16_t));
 			Writer.WriteInteger(0, sizeof(uint16_t)); //Purpose unknown
 		}
