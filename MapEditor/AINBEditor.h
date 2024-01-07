@@ -11,9 +11,7 @@ class AINBEditor
 public:
 	
 	void DrawNodeEditor();
-
-	AINBEditor(std::string Path);
-	AINBEditor() {}
+	void Initialize();
 private:
 	AINBFile m_File;
 	int CurrentID = 0;

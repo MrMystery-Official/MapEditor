@@ -76,6 +76,9 @@
     <Filter Include="Source Files\editor\ainb">
       <UniqueIdentifier>{62dc2868-b8df-4e1b-8bfd-89fd96ae74f0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\external">
+      <UniqueIdentifier>{ea576423-57c9-4b42-8469-27dcd8cbb643}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -189,9 +192,6 @@
     <ClCompile Include="MapConfig.cpp">
       <Filter>Source Files\editor</Filter>
     </ClCompile>
-    <ClCompile Include="astc_decomp.cpp">
-      <Filter>Header Files\external</Filter>
-    </ClCompile>
     <ClCompile Include="EditorConfig.cpp">
       <Filter>Source Files\editor</Filter>
     </ClCompile>
@@ -206,6 +206,12 @@
     </ClCompile>
     <ClCompile Include="AINBNodeDefinitions.cpp">
       <Filter>Source Files\editor\ainb</Filter>
+    </ClCompile>
+    <ClCompile Include="astc_decomp.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="tinyfiledialogs.c">
+      <Filter>Source Files\external</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -337,6 +343,9 @@
     </ClInclude>
     <ClInclude Include="AINBNodeDefinitions.h">
       <Filter>Header Files\file\ainb</Filter>
+    </ClInclude>
+    <ClInclude Include="tinyfiledialogs.h">
+      <Filter>Header Files\external</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

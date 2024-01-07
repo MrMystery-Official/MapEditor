@@ -315,6 +315,7 @@ file_category = {"AI" : 0, "Logic" : 1, "Sequence" : 2}
 	std::vector<EmbeddedAinb> EmbeddedAinbArray;
 	std::vector<uint32_t> AttachmentArray;
 	bool IsReplaced;
+	bool Loaded = false;
 
 	std::string ReadStringFromStringPool(BinaryVectorReader* Reader, uint32_t Offset);
 	GUIDData ReadGUID(BinaryVectorReader* Reader);

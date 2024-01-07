@@ -230,7 +230,7 @@ void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActo
 
 	camera = Camera(WIDTH, HEIGHT, glm::vec3(0.0f, 0.0f, 2.0f));
 
-	NodeEditor = AINBEditor(Config::GetRomFSFile("Logic/Dungeon001_1800.logic.root.ainb"));
+	NodeEditor.Initialize();
 
 	LoadedDungeon = true;
 }

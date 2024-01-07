@@ -762,6 +762,8 @@ AINBFile::AINBFile(std::vector<unsigned char> Bytes) {
 		Entry.Count = Reader.ReadUInt32();
 		this->EmbeddedAinbArray[i] = Entry;
 	}
+
+	this->Loaded = true;
 }
 
 AINBFile::Node& AINBFile::GetBaseNode() {

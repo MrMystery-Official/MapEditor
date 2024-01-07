@@ -6,6 +6,8 @@
 #include "imgui_internal.h"
 #include "imgui_stdlib.h"
 
+#include "tinyfiledialogs.h"
+
 void AINBEditor::DrawNode(AINBFile::Node& Node)
 {
     ImNodes::BeginNode(Node.EditorID);
@@ -294,93 +296,131 @@ bool VectorOfStringGetter(void* data, int n, const char** out_text)
 
 void AINBEditor::DrawNodeEditor()
 {
-    bool WantAutoLayout = ImGui::Button("Auto layout");
-    ImGui::SameLine();
-    bool WantDeleteSelected = ImGui::Button("Delete Selected");
-    ImGui::SameLine();
-    if (ImGui::Button("Add node"))
+    if (ImGui::Button("Open"))
     {
-        AddAINBNodePopUp.IsOpen() = true;
-    }
-    if (AddAINBNodePopUp.IsCompleted())
-    {
+        const char* Path = tinyfd_openFileDialog("Open file", Config::GetRomFSFile("Logic").c_str(), 0, nullptr, nullptr, 0);
+        if (Path != nullptr) {
+            this->m_File = AINBFile(Config::GetRomFSFile("Logic/" + std::string(strrchr(Path, '\\') + 1)));
 
-        AINBFile::Node Node;
-        Node.NodeIndex = this->m_File.Nodes.size();
-        Node.Type = (uint16_t)AINBFile::NodeTypes::UserDefined;
-        Node.AttachmentCount = 0;
-        Node.Name = AddAINBNodePopUp.GetData()[0];
-        Node.EditorID = CurrentID++;
+            this->CurrentID = 0;
 
-        Node.InputParameters.resize(6);
-        Node.OutputParameters.resize(6);
-        Node.ImmediateParameters.resize(6);
-
-        AINBNodeDefinitions::NodeDefinition* Definition = AINBNodeDefinitions::GetNodeDefinition(Node.Name);
-
-        if (Definition != nullptr)
-        {
-            Node.NameHash = Definition->NameHash;
-            Node.Type = Definition->Type;
-            for (int Type = 0; Type < AINBFile::ValueTypeCount; Type++)
+            for (AINBFile::Node& Node : this->m_File.Nodes)
             {
-                for (AINBNodeDefinitions::NodeDefinitionOutputParameter Param : Definition->OutputParameters[Type])
+                Node.EditorID = CurrentID++;
+                for (int i = 0; i < AINBFile::ValueTypeCount; i++)
                 {
-                    AINBFile::OutputEntry Entry;
-                    Entry.Name = Param.Name;
-                    Entry.Class = Param.Class;
-                    Entry.SetPointerFlagsBitZero = Param.SetPointerFlagsBitZero;
-                    Entry.EditorID = CurrentID++;
-                    Node.OutputParameters[Type].push_back(Entry);
-                }
-                for (AINBNodeDefinitions::NodeDefinitionImmediateParameter Param : Definition->ImmediateParameters[Type])
-                {
-                    AINBFile::ImmediateParameter Entry;
-                    Entry.Name = Param.Name;
-                    Entry.Class = Param.Class;
-                    Entry.ValueType = (int)Param.ValueType;
-                    switch (Param.ValueType)
+                    for (AINBFile::InputEntry& Param : Node.InputParameters[i])
                     {
-                    case AINBFile::ValueType::Bool:
-                        Entry.Value = false;
-                        break;
-                    case AINBFile::ValueType::Int:
-                        Entry.Value = (uint32_t)0;
-                        break;
-                    case AINBFile::ValueType::Float:
-                        Entry.Value = 0.0f;
-                        break;
-                    case AINBFile::ValueType::String:
-                        Entry.Value = "None";
-                        break;
-                    case AINBFile::ValueType::Vec3f:
-                        Entry.Value = Vector3F(0.0f, 0.0f, 0.0f);
-                        break;
+                        Param.EditorID = CurrentID++;
+                        CurrentID += 3;
                     }
-                    Node.ImmediateParameters[Type].push_back(Entry);
-                }
-                for (AINBNodeDefinitions::NodeDefinitionInputParameter Param : Definition->InputParameters[Type])
-                {
-                    AINBFile::InputEntry Entry;
-                    Entry.Name = Param.Name;
-                    Entry.NodeIndex = -1;
-                    Entry.ParameterIndex = -1;
-                    Entry.Class = Param.Class;
-                    Entry.ValueType = (int)Param.ValueType;
-                    Entry.Value = Param.Value;
-                    Entry.EditorID = CurrentID++;
-                    CurrentID += 3;
-                    Node.InputParameters[Type].push_back(Entry);
+                    for (AINBFile::OutputEntry& Param : Node.OutputParameters[i])
+                    {
+                        Param.EditorID = CurrentID++;
+                    }
                 }
             }
+        }
+    }
 
-            this->m_File.Nodes.push_back(Node);
+    bool WantAutoLayout = false;
+    bool WantDeleteSelected = false;
+    if (this->m_File.Loaded)
+    {
+        ImGui::SameLine();
+
+        if (ImGui::Button("Save"))
+        {
+            this->m_File.Write(Config::GetWorkingDirFile("Save/Logic/" + this->m_File.Header.FileName + ".ainb"));
         }
 
-        AddAINBNodePopUp.Reset();
-    }
-    if (AddAINBNodePopUp.IsOpen())
-    {
+        WantAutoLayout = ImGui::Button("Auto layout");
+        ImGui::SameLine();
+        WantDeleteSelected = ImGui::Button("Delete selected");
+        ImGui::SameLine();
+        if (ImGui::Button("Add node"))
+        {
+            AddAINBNodePopUp.IsOpen() = true;
+        }
+        if (AddAINBNodePopUp.IsCompleted())
+        {
+
+            AINBFile::Node Node;
+            Node.NodeIndex = this->m_File.Nodes.size();
+            Node.Type = (uint16_t)AINBFile::NodeTypes::UserDefined;
+            Node.AttachmentCount = 0;
+            Node.Name = AddAINBNodePopUp.GetData()[0];
+            Node.EditorID = CurrentID++;
+
+            Node.InputParameters.resize(6);
+            Node.OutputParameters.resize(6);
+            Node.ImmediateParameters.resize(6);
+
+            AINBNodeDefinitions::NodeDefinition* Definition = AINBNodeDefinitions::GetNodeDefinition(Node.Name);
+
+            if (Definition != nullptr)
+            {
+                Node.NameHash = Definition->NameHash;
+                Node.Type = Definition->Type;
+                for (int Type = 0; Type < AINBFile::ValueTypeCount; Type++)
+                {
+                    for (AINBNodeDefinitions::NodeDefinitionOutputParameter Param : Definition->OutputParameters[Type])
+                    {
+                        AINBFile::OutputEntry Entry;
+                        Entry.Name = Param.Name;
+                        Entry.Class = Param.Class;
+                        Entry.SetPointerFlagsBitZero = Param.SetPointerFlagsBitZero;
+                        Entry.EditorID = CurrentID++;
+                        Node.OutputParameters[Type].push_back(Entry);
+                    }
+                    for (AINBNodeDefinitions::NodeDefinitionImmediateParameter Param : Definition->ImmediateParameters[Type])
+                    {
+                        AINBFile::ImmediateParameter Entry;
+                        Entry.Name = Param.Name;
+                        Entry.Class = Param.Class;
+                        Entry.ValueType = (int)Param.ValueType;
+                        switch (Param.ValueType)
+                        {
+                        case AINBFile::ValueType::Bool:
+                            Entry.Value = false;
+                            break;
+                        case AINBFile::ValueType::Int:
+                            Entry.Value = (uint32_t)0;
+                            break;
+                        case AINBFile::ValueType::Float:
+                            Entry.Value = 0.0f;
+                            break;
+                        case AINBFile::ValueType::String:
+                            Entry.Value = "None";
+                            break;
+                        case AINBFile::ValueType::Vec3f:
+                            Entry.Value = Vector3F(0.0f, 0.0f, 0.0f);
+                            break;
+                        }
+                        Node.ImmediateParameters[Type].push_back(Entry);
+                    }
+                    for (AINBNodeDefinitions::NodeDefinitionInputParameter Param : Definition->InputParameters[Type])
+                    {
+                        AINBFile::InputEntry Entry;
+                        Entry.Name = Param.Name;
+                        Entry.NodeIndex = -1;
+                        Entry.ParameterIndex = -1;
+                        Entry.Class = Param.Class;
+                        Entry.ValueType = (int)Param.ValueType;
+                        Entry.Value = Param.Value;
+                        Entry.EditorID = CurrentID++;
+                        CurrentID += 3;
+                        Node.InputParameters[Type].push_back(Entry);
+                    }
+                }
+
+                this->m_File.Nodes.push_back(Node);
+            }
+
+            AddAINBNodePopUp.Reset();
+        }
+        if (AddAINBNodePopUp.IsOpen())
+        {
             this->m_NodeNames.clear();
             for (AINBNodeDefinitions::NodeDefinition Def : AINBNodeDefinitions::NodeDefinitions)
             {
@@ -390,41 +430,37 @@ void AINBEditor::DrawNodeEditor()
                 }
             }
 
-        AddAINBNodePopUp.Begin();
-        if (AddAINBNodePopUp.BeginPopupModal())
-        {
-            ImGui::InputText("Search", &AddAINBNodePopUp.GetData()[0]);
-
-            int selected = 0;
-
-            if (ImGui::ListBox("##ListBox", &selected,
-                [](void* vec, int idx, const char** out_text) {
-                    std::vector<std::string>* vector = reinterpret_cast<std::vector<std::string>*>(vec);
-                    if (idx < 0 || idx >= vector->size())return false;
-                    *out_text = vector->at(idx).c_str();
-                    return true;
-                }, reinterpret_cast<void*>(&this->m_NodeNames), this->m_NodeNames.size()))
+            AddAINBNodePopUp.Begin();
+            if (AddAINBNodePopUp.BeginPopupModal())
             {
-                AddAINBNodePopUp.GetData()[0] = this->m_NodeNames[selected];
-            }
+                ImGui::InputText("Search", &AddAINBNodePopUp.GetData()[0]);
 
-            if (ImGui::Button("Add"))
-            {
-                AddAINBNodePopUp.IsOpen() = false;
-                AddAINBNodePopUp.IsCompleted() = true;
+                int selected = 0;
+
+                if (ImGui::ListBox("##ListBox", &selected,
+                    [](void* vec, int idx, const char** out_text) {
+                        std::vector<std::string>* vector = reinterpret_cast<std::vector<std::string>*>(vec);
+                        if (idx < 0 || idx >= vector->size())return false;
+                        *out_text = vector->at(idx).c_str();
+                        return true;
+                    }, reinterpret_cast<void*>(&this->m_NodeNames), this->m_NodeNames.size()))
+                {
+                    AddAINBNodePopUp.GetData()[0] = this->m_NodeNames[selected];
+                }
+
+                if (ImGui::Button("Add"))
+                {
+                    AddAINBNodePopUp.IsOpen() = false;
+                    AddAINBNodePopUp.IsCompleted() = true;
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Return"))
+                {
+                    AddAINBNodePopUp.Reset();
+                }
             }
-            ImGui::SameLine();
-            if (ImGui::Button("Return"))
-            {
-                AddAINBNodePopUp.Reset();
-            }
+            AddAINBNodePopUp.End();
         }
-        AddAINBNodePopUp.End();
-    }
-
-    if (ImGui::Button("Save"))
-    {
-        this->m_File.Write(Config::GetWorkingDirFile(this->m_File.Header.FileName + ".ainb"));
     }
 
     ImNodes::BeginNodeEditor();
@@ -692,27 +728,8 @@ void AINBEditor::DrawNodeEditor()
     */
 }
 
-AINBEditor::AINBEditor(std::string Path)
+void AINBEditor::Initialize()
 {
-    this->m_File = AINBFile(Path);
-
     ImNodesStyle& style = ImNodes::GetStyle();
     style.Flags |= ImNodesStyleFlags_GridLinesPrimary | ImNodesStyleFlags_GridSnapping;
-
-    for (AINBFile::Node& Node : this->m_File.Nodes)
-    {
-        Node.EditorID = CurrentID++;
-        for (int i = 0; i < AINBFile::ValueTypeCount; i++)
-        {
-            for (AINBFile::InputEntry& Param : Node.InputParameters[i])
-            {
-                Param.EditorID = CurrentID++;
-                CurrentID += 3;
-            }
-            for (AINBFile::OutputEntry& Param : Node.OutputParameters[i])
-            {
-                Param.EditorID = CurrentID++;
-            }
-        }
-    }
 }
