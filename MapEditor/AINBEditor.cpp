@@ -286,6 +286,7 @@ void AINBEditor::SetNodePos(AINBFile::Node* Node, int WidthOffset, int HeightOff
 }
 
 ImGuiPopUp AddAINBNodePopUp("Add node", 500, 210, 1);
+ImGuiPopUp ConfirmAINBRevert("Confirm revert", 200, 200, 0);
 
 bool VectorOfStringGetter(void* data, int n, const char** out_text)
 {
@@ -296,6 +297,8 @@ bool VectorOfStringGetter(void* data, int n, const char** out_text)
 
 void AINBEditor::DrawNodeEditor()
 {
+    bool WantAutoLayout = false;
+    bool WantDeleteSelected = false;
     if (ImGui::Button("Open"))
     {
         const char* Path = tinyfd_openFileDialog("Open file", Config::GetRomFSFile("Logic").c_str(), 0, nullptr, nullptr, 0);
@@ -303,6 +306,7 @@ void AINBEditor::DrawNodeEditor()
             this->m_File = AINBFile(Config::GetRomFSFile("Logic/" + std::string(strrchr(Path, '\\') + 1)));
 
             this->CurrentID = 0;
+            this->m_NodeNames.clear();
 
             for (AINBFile::Node& Node : this->m_File.Nodes)
             {
@@ -320,11 +324,10 @@ void AINBEditor::DrawNodeEditor()
                     }
                 }
             }
+            WantAutoLayout = true;
         }
     }
 
-    bool WantAutoLayout = false;
-    bool WantDeleteSelected = false;
     if (this->m_File.Loaded)
     {
         ImGui::SameLine();
@@ -333,8 +336,61 @@ void AINBEditor::DrawNodeEditor()
         {
             this->m_File.Write(Config::GetWorkingDirFile("Save/Logic/" + this->m_File.Header.FileName + ".ainb"));
         }
+        ImGui::SameLine();
+        if (ImGui::Button("Revert to original"))
+        {
+            if(Util::FileExists(Config::GetRomFSFile("Logic/" + this->m_File.Header.FileName + ".ainb", false)))
+                ConfirmAINBRevert.IsOpen() = true;
+        }
+        if(ConfirmAINBRevert.IsCompleted())
+        {
+            this->m_File = AINBFile(Config::GetRomFSFile("Logic/" + this->m_File.Header.FileName + ".ainb", false));
 
-        WantAutoLayout = ImGui::Button("Auto layout");
+            this->CurrentID = 0;
+            this->m_NodeNames.clear();
+
+            for (AINBFile::Node& Node : this->m_File.Nodes)
+            {
+                Node.EditorID = CurrentID++;
+                for (int i = 0; i < AINBFile::ValueTypeCount; i++)
+                {
+                    for (AINBFile::InputEntry& Param : Node.InputParameters[i])
+                    {
+                        Param.EditorID = CurrentID++;
+                        CurrentID += 3;
+                    }
+                    for (AINBFile::OutputEntry& Param : Node.OutputParameters[i])
+                    {
+                        Param.EditorID = CurrentID++;
+                    }
+                }
+            }
+
+            WantAutoLayout = true;
+            ConfirmAINBRevert.Reset();
+        }
+        if (ConfirmAINBRevert.IsOpen())
+        {
+            ConfirmAINBRevert.Begin();
+            if (ConfirmAINBRevert.BeginPopupModal())
+            {
+                ImGui::Text("Do you really want to undo all changes and import the original file?");
+                ImGui::NewLine();
+                if (ImGui::Button("Yes"))
+                {
+                    ConfirmAINBRevert.IsCompleted() = true;
+                    ConfirmAINBRevert.IsOpen() = false;
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("No"))
+                {
+                    ConfirmAINBRevert.Reset();
+                }
+            }
+            ConfirmAINBRevert.End();
+        }
+
+        if(!WantAutoLayout) WantAutoLayout = ImGui::Button("Auto layout");
         ImGui::SameLine();
         WantDeleteSelected = ImGui::Button("Delete selected");
         ImGui::SameLine();
