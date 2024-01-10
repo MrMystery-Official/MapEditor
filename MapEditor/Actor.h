@@ -194,6 +194,9 @@ public:
 	std::string& GetCategory();
 	void SetCategory(std::string Category);
 
+	uint32_t& GetCollisionSRTHash();
+	void SetCollisionSRTHash(uint32_t Hash);
+
 private:
 	/* TotK Engine */
 	Actor::Type m_Type; //Required
@@ -224,4 +227,5 @@ private:
 	Phive m_Phive; //Technically not required, but TotK doesn't like actors without Phive data:(
 	bool m_CollisionClimbable = false; //Not reqiured
 	std::string m_CollisionFile = ""; //Not required
+	uint32_t m_CollisionSRTHash = 0; //Not required
 };

@@ -1,5 +1,66 @@
 #include "AINB.h"
 
+std::string AINBFile::NodeTypeToString(AINBFile::NodeTypes Type)
+{
+	switch (Type)
+	{
+	case AINBFile::NodeTypes::UserDefined:
+		return "UserDefined";
+	case AINBFile::NodeTypes::Element_S32Selector:
+		return "Element_S32Selector";
+	case AINBFile::NodeTypes::Element_Sequential:
+		return "Element_Sequential";
+	case AINBFile::NodeTypes::Element_Simultaneous:
+		return "Element_Simultaneous";
+	case AINBFile::NodeTypes::Element_F32Selector:
+		return "Element_F32Selector";
+	case AINBFile::NodeTypes::Element_StringSelector:
+		return "Element_StringSelector";
+	case AINBFile::NodeTypes::Element_RandomSelector:
+		return "Element_RandomSelector";
+	case AINBFile::NodeTypes::Element_BoolSelector:
+		return "Element_BoolSelector";
+	case AINBFile::NodeTypes::Element_Fork:
+		return "Element_Fork";
+	case AINBFile::NodeTypes::Element_Join:
+		return "Element_Join";
+	case AINBFile::NodeTypes::Element_Alert:
+		return "Element_Alert";
+	case AINBFile::NodeTypes::Element_Expression:
+		return "Element_Expression";
+	case AINBFile::NodeTypes::Element_ModuleIF_Input_S32:
+		return "Element_ModuleIF_Input_S32";
+	case AINBFile::NodeTypes::Element_ModuleIF_Input_F32:
+		return "Element_ModuleIF_Input_F32";
+	case AINBFile::NodeTypes::Element_ModuleIF_Input_Vec3f:
+		return "Element_ModuleIF_Input_Vec3f";
+	case AINBFile::NodeTypes::Element_ModuleIF_Input_String:
+		return "Element_ModuleIF_Input_String";
+	case AINBFile::NodeTypes::Element_ModuleIF_Input_Bool:
+		return "Element_ModuleIF_Input_Bool";
+	case AINBFile::NodeTypes::Element_ModuleIF_Input_Ptr:
+		return "Element_ModuleIF_Input_Ptr";
+	case AINBFile::NodeTypes::Element_ModuleIF_Output_S32:
+		return "Element_ModuleIF_Output_S32";
+	case AINBFile::NodeTypes::Element_ModuleIF_Output_F32:
+		return "Element_ModuleIF_Output_F32";
+	case AINBFile::NodeTypes::Element_ModuleIF_Output_Vec3f:
+		return "Element_ModuleIF_Output_Vec3f";
+	case AINBFile::NodeTypes::Element_ModuleIF_Output_String:
+		return "Element_ModuleIF_Output_String";
+	case AINBFile::NodeTypes::Element_ModuleIF_Output_Bool:
+		return "Element_ModuleIF_Output_Bool";
+	case AINBFile::NodeTypes::Element_ModuleIF_Output_Ptr:
+		return "Element_ModuleIF_Output_Ptr";
+	case AINBFile::NodeTypes::Element_ModuleIF_Child:
+		return "Element_ModuleIF_Child";
+	case AINBFile::NodeTypes::Element_StateEnd:
+		return "Element_StateEnd";
+	case AINBFile::NodeTypes::Element_SplitTiming:
+		return "Element_SplitTiming";
+	}
+}
+
 std::string AINBFile::ReadStringFromStringPool(BinaryVectorReader* Reader, uint32_t Offset) {
 	int BaseOffset = Reader->GetPosition();
 	Reader->Seek(Header.StringOffset + Offset, BinaryVectorReader::Position::Begin);

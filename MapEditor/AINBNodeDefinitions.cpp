@@ -46,7 +46,6 @@ void AINBNodeDefinitions::Initialize()
 			Reader.Seek(Offsets[i], BinaryVectorReader::Position::Begin);
 			AINBNodeDefinitions::NodeDefinition Definition;
 			Definition.Name = ReadString(Reader);
-			std::cout << Definition.Name << std::endl;
 			Definition.NameHash = Reader.ReadUInt32();
 			Definition.Type = Reader.ReadUInt16();
 			Definition.Category = (AINBNodeDefinitions::NodeDefinitionCategory)Reader.ReadUInt8();
@@ -137,7 +136,7 @@ void AINBNodeDefinitions::Generate()
 			{
 				for (AINBNodeDefinitions::NodeDefinition& Definition : Definitions)
 				{
-					if (Definition.Name == Node.Name)
+					if (Definition.Name == (Node.Name.length() > 0 ? Node.Name : AINBFile::NodeTypeToString((AINBFile::NodeTypes)Node.Type)))
 					{
 						NodeFound = true;
 						for (int i = 0; i < AINBFile::ValueTypeCount; i++)
@@ -194,6 +193,11 @@ void AINBNodeDefinitions::Generate()
 				Definition.Name = Node.Name;
 				Definition.NameHash = Node.NameHash;
 				Definition.Type = Node.Type;
+				if (Definition.Name.length() == 0)
+				{
+					Definition.Name = AINBFile::NodeTypeToString((AINBFile::NodeTypes)Definition.Type);
+					std::cout << Definition.Type << std::endl;
+				}
 				for (int i = 0; i < AINBFile::ValueTypeCount; i++)
 				{
 					for (AINBFile::OutputEntry Param : Node.OutputParameters[i])
@@ -294,7 +298,7 @@ void AINBNodeDefinitions::Generate()
 	{
 		Writer.WriteInteger(Offset, sizeof(uint32_t));
 	}
-
+	
 	std::ofstream FileOut(Config::GetWorkingDirFile("Definitions.eainbdef"), std::ios::binary);
 	std::vector<unsigned char> Binary = Writer.GetData();
 	std::copy(Binary.cbegin(), Binary.cend(),

@@ -255,3 +255,12 @@ void Actor::SetCategory(std::string Category)
 {
 	this->m_Category = Category;
 }
+
+uint32_t& Actor::GetCollisionSRTHash()
+{
+	return this->m_CollisionSRTHash;
+}
+void Actor::SetCollisionSRTHash(uint32_t Hash)
+{
+	this->m_CollisionSRTHash = Hash;
+}

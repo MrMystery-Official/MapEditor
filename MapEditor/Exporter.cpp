@@ -368,7 +368,174 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 				Util::CreateDir(Path + "/Pack");
 				Util::CreateDir(Path + "/Pack/Actor");
 				//ActorPackSarcCompressed.Compress(ExportPath + "/Pack/Actor/MapEditor_Bake_Collision_RCube_" + std::to_string(actor.SRTHash) + ".pack.zs");
-				ZStdFile::Compress(ActorPackSarc.ToBinary(), ZStdFile::Dictionary::Pack).WriteToFile(Path + "/Pack/Actor/MapEditor_Collision_File_" + Actor.GetGyml() + ".pack.zs");
+				ZStdFile::Compress(ActorPackSarc.ToBinary(), ZStdFile::Dictionary::Pack).WriteToFile(Path + "/Pack/Actor/" + Actor.GetGyml() + ".pack.zs");
+			}
+
+			if (Actor.GetGyml().rfind("MapEditor_Collision_Custom_", 0) == 0)
+			{
+				/*
+							BymlFile ShapeParamByml;
+			BymlNode PolytopeRootNode;
+			PolytopeRootNode.Type = BymlData::BymlDataType::Dictionary;
+			PolytopeRootNode.Key = "root";
+			BymlNode PolytopeArrayNode;
+			PolytopeArrayNode.Type = BymlData::BymlDataType::Array;
+			PolytopeArrayNode.Key = "Polytope";
+
+			BymlNode PolytopeShapeDict;
+			PolytopeShapeDict.Type = BymlData::BymlDataType::Dictionary;
+
+			BymlNode PolytopeMassDistributionFactor;
+			PolytopeMassDistributionFactor.Type = BymlData::BymlDataType::F32;
+			PolytopeMassDistributionFactor.Key = "MassDistributionFactor";
+			PolytopeMassDistributionFactor.Value = "1";
+
+			PolytopeShapeDict.Childrens.push_back(PolytopeMassDistributionFactor);
+
+			BymlNode PoyltopeMaterialsDict;
+			PoyltopeMaterialsDict.Type = BymlData::BymlDataType::Array;
+			PoyltopeMaterialsDict.Key = "MaterialPresets";
+				BymlNode MaterialNode;
+				MaterialNode.Type = BymlData::BymlDataType::StringIndex;
+				MaterialNode.Key = "Material_Stone";
+				MaterialNode.Value = "Material_Stone";
+				PoyltopeMaterialsDict.Childrens.push_back(MaterialNode);
+
+
+			if (!PoyltopeMaterialsDict.Childrens.empty()) {
+				PolytopeShapeDict.Childrens.push_back(PoyltopeMaterialsDict);
+			}
+
+			BymlNode PolytopeVertices;
+			PolytopeVertices.Type = BymlData::BymlDataType::Array;
+			PolytopeVertices.Key = "Vertices";
+
+			BfresFile* BfresModel = nullptr;
+
+			for (Actor& LinkedActor : *Actors) {
+				if (LinkedActor.SRTHash == actor.CollisionPolytopeLinkSRTHash) {
+					BfresModel = &LinkedActor.Model;
+					break;
+				}
+			}
+
+			if (BfresModel == nullptr) {
+				std::cout << "ERROR: Could not find a collision refrence actor for Polytope model!" << std::endl;
+				continue;
+			} else {
+				for (BfresFile::Model Model : BfresModel->Models) {
+					for (int i = 0; i < Model.Vertices.size() / 8; i++) {
+						BymlNode PolytopeVertice;
+						PolytopeVertice.Type = BymlData::BymlDataType::Dictionary;
+
+						BymlNode PolytopeVerticeX;
+						PolytopeVerticeX.Type = BymlData::BymlDataType::F32;
+						PolytopeVerticeX.Key = "X";
+						PolytopeVerticeX.Value = std::to_string(Model.Vertices[i * 8]);
+
+						BymlNode PolytopeVerticeY;
+						PolytopeVerticeY.Type = BymlData::BymlDataType::F32;
+						PolytopeVerticeY.Key = "Y";
+						PolytopeVerticeY.Value = std::to_string(Model.Vertices[i * 8 + 1]);
+
+						BymlNode PolytopeVerticeZ;
+						PolytopeVerticeZ.Type = BymlData::BymlDataType::F32;
+						PolytopeVerticeZ.Key = "Z";
+						PolytopeVerticeZ.Value = std::to_string(Model.Vertices[i * 8 + 2]);
+
+						PolytopeVertice.Childrens.push_back(PolytopeVerticeX);
+						PolytopeVertice.Childrens.push_back(PolytopeVerticeY);
+						PolytopeVertice.Childrens.push_back(PolytopeVerticeZ);
+
+						PolytopeVertices.Childrens.push_back(PolytopeVertice);
+					}
+				}
+			}
+
+			PolytopeShapeDict.Childrens.push_back(PolytopeVertices);
+
+			PolytopeArrayNode.Childrens.push_back(PolytopeShapeDict);
+
+			PolytopeRootNode.Childrens.push_back(PolytopeArrayNode);
+			ShapeParamByml.Node = PolytopeRootNode;
+				*/
+
+				BymlFile ShapeParamByml;
+				ShapeParamByml.GetType() = BymlFile::Type::Dictionary;
+				BymlFile::Node PolytopeArrayNode(BymlFile::Type::Array, "Polytope");
+				BymlFile::Node PolytopeShapeDict(BymlFile::Type::Dictionary);
+				BymlFile::Node PolytopeVertices(BymlFile::Type::Array, "Vertices");
+
+				BfresFile* BfresModel = nullptr;
+
+				for (auto& LinkedActor : *Actors) {
+					if (LinkedActor.GetSRTHash() == Actor.GetCollisionSRTHash()) {
+						BfresModel = LinkedActor.GetModel();
+						break;
+					}
+				}
+
+				if (BfresModel == nullptr)
+				{
+					std::cerr << "ERROR: Could not find custom collision actor parent!\n";
+					continue;
+				}
+				else
+				{
+					for (int i = 0; i < BfresModel->GetModels()[0].Vertices.size(); i++)
+					{
+						for (int VerticeIndex = 0; VerticeIndex < BfresModel->GetModels()[0].Vertices[i].size() / 3; VerticeIndex++)
+						{
+							BymlFile::Node PolytopeVertice(BymlFile::Type::Dictionary);
+
+							BymlFile::Node PolytopeVerticeX(BymlFile::Type::Float, "X");
+							PolytopeVerticeX.SetValue<float>(BfresModel->GetModels()[0].Vertices[i][VerticeIndex * 3]);
+
+							BymlFile::Node PolytopeVerticeY(BymlFile::Type::Float, "Y");
+							PolytopeVerticeY.SetValue<float>(BfresModel->GetModels()[0].Vertices[i][VerticeIndex * 3 + 1]);
+
+							BymlFile::Node PolytopeVerticeZ(BymlFile::Type::Float, "Z");
+							PolytopeVerticeZ.SetValue<float>(BfresModel->GetModels()[0].Vertices[i][VerticeIndex * 3 + 2]);
+
+							PolytopeVertice.AddChild(PolytopeVerticeX);
+							PolytopeVertice.AddChild(PolytopeVerticeY);
+							PolytopeVertice.AddChild(PolytopeVerticeZ);
+
+							PolytopeVertices.AddChild(PolytopeVertice);
+						}
+					}
+				}
+
+				PolytopeShapeDict.AddChild(PolytopeVertices);
+				PolytopeArrayNode.AddChild(PolytopeShapeDict);
+				ShapeParamByml.GetNodes().push_back(PolytopeArrayNode);
+
+				SarcFile ActorPackSarc("MapEditor_Bake_Collision.pack");
+
+				ActorPackSarc.GetEntry("Phive/ShapeParam/MapEditor_Bake_Collision__Physical.phive__ShapeParam.bgyml").Bytes = ShapeParamByml.ToBinary(BymlFile::TableGeneration::Auto);
+
+				std::vector<std::string> BymlsToReplaceData = { "Component/ELink/MapEditor_Bake_Collision.engine__component__ELinkParam.bgyml", "Component/Physics/MapEditor_Bake_Collision.engine__component__PhysicsParam.bgyml", "Actor/MapEditor_Bake_Collision.engine__actor__ActorParam.bgyml", "Phive/ControllerSetParam/MapEditor_Bake_Collision.phive__ControllerSetParam.bgyml", "Phive/ShapeParam/MapEditor_Bake_Collision__Physical.phive__ShapeParam.bgyml" };
+				for (int i = 0; i < BymlsToReplaceData.size(); i++) {
+					BymlFile File(ActorPackSarc.GetEntry(BymlsToReplaceData[i]).Bytes);
+					for (BymlFile::Node& Nodes : File.GetNodes())
+					{
+						ReplaceStringInBymlNodes(&Nodes, "MapEditor_Bake_Collision", Actor.GetGyml());
+					}
+					ActorPackSarc.GetEntry(BymlsToReplaceData[i]).Bytes = File.ToBinary(BymlFile::TableGeneration::Auto);
+				}
+
+				for (SarcFile::Entry& Value : ActorPackSarc.GetEntries())
+				{
+					Util::ReplaceString(Value.Name, "MapEditor_Bake_Collision", Actor.GetGyml());
+				}
+
+
+				//ActorPackSarc.WriteToFile(Config::GetWorkingDirFile("Cache/MapEditor_Bake_Collision_Cube_" + std::to_string(Actor.GetSRTHash()) + ".pack"));
+				//ZStdFile ActorPackSarcCompressed(Util::GetWorkingDirFile("Cache/MapEditor_Bake_Collision_RCube_" + std::to_string(actor.SRTHash) + ".pack"), ZStdMode::ZStdDictionary::PackZSDictionary, ZStdMode::ZStdOperation::Compress);
+				Util::CreateDir(Path + "/Pack");
+				Util::CreateDir(Path + "/Pack/Actor");
+				//ActorPackSarcCompressed.Compress(ExportPath + "/Pack/Actor/MapEditor_Bake_Collision_RCube_" + std::to_string(actor.SRTHash) + ".pack.zs");
+				ZStdFile::Compress(ActorPackSarc.ToBinary(), ZStdFile::Dictionary::Pack).WriteToFile(Path + "/Pack/Actor/" + Actor.GetGyml() + ".pack.zs");
 			}
 		}
 

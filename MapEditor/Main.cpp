@@ -24,6 +24,7 @@ int main(int, char**)
     Util::CreateDir(Config::WorkingDir + "/EditorModels");
     Util::CreateDir(Config::WorkingDir + "/Cache");
     Util::CreateDir(Config::WorkingDir + "/Save");
+    Util::CreateDir(Config::WorkingDir + "/Save/Logic");
     Util::CreateDir(Config::WorkingDir + "/Save/Banc");
     Util::CreateDir(Config::WorkingDir + "/Save/Banc/SmallDungeon");
     Util::CreateDir(Config::WorkingDir + "/Save/Banc/SmallDungeon/Merged");

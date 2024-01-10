@@ -317,6 +317,7 @@ file_category = {"AI" : 0, "Logic" : 1, "Sequence" : 2}
 	bool IsReplaced;
 	bool Loaded = false;
 
+	static std::string NodeTypeToString(AINBFile::NodeTypes Type);
 	std::string ReadStringFromStringPool(BinaryVectorReader* Reader, uint32_t Offset);
 	GUIDData ReadGUID(BinaryVectorReader* Reader);
 	Node& GetBaseNode();

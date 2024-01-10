@@ -40,7 +40,7 @@ struct RenderSettingsStruct
 RenderSettingsStruct RenderSettings;
 
 bool LoadedEConfig = false;
-bool LoadedDungeon = false;
+bool LoadedDungeon = true;
 
 namespace Frustum
 {
@@ -231,8 +231,6 @@ void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActo
 	camera = Camera(WIDTH, HEIGHT, glm::vec3(0.0f, 0.0f, 2.0f));
 
 	NodeEditor.Initialize();
-
-	LoadedDungeon = true;
 }
 
 void Frontend::CleanUp() {
@@ -442,6 +440,11 @@ void Frontend::Render() {
 
 	//Left window with options and actions
 	ImGui::Begin("Actions");
+
+	if (ImGui::Button("Load map"))
+	{
+		LoadedDungeon = false;
+	}
 
 	if (ImGui::Button("Add Actor"))
 	{
@@ -952,6 +955,10 @@ void Frontend::Render() {
 		{
 			ImGui::InputText("Phive Shape", &SelectedActor.GetCollisionFile());
 		}
+		if (SelectedActor.GetGyml().rfind("MapEditor_Collision_Custom", 0) == 0)
+		{
+			ImGui::InputScalar("Collision Actor Link", ImGuiDataType_::ImGuiDataType_U32, &SelectedActor.GetCollisionSRTHash());
+		}
 		ImGui::Text("Phive - Placement");
 		ImGui::SameLine();
 		if (ImGui::Button("Add##1"))
@@ -1102,6 +1109,7 @@ void Frontend::Render() {
 			{
 				LoadMapPopUp.IsOpen() = false;
 				LoadedDungeon = true;
+				Actors->clear();
 				(*Actors) = MapLoader::LoadMap(LoadMapPopUp.GetData()[0], (MapLoader::Type)LoadMapPopUp.IntData);
 				camera.Position.x = Actors->at(0).GetTranslate().GetX();
 				camera.Position.y = Actors->at(0).GetTranslate().GetY();
