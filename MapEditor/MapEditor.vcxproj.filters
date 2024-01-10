@@ -201,9 +201,6 @@
     <ClCompile Include="AINBEditor.cpp">
       <Filter>Source Files\editor\ainb</Filter>
     </ClCompile>
-    <ClCompile Include="imgui_node_editor\imnodes.cpp">
-      <Filter>Source Files\imgui_node_editor</Filter>
-    </ClCompile>
     <ClCompile Include="AINBNodeDefinitions.cpp">
       <Filter>Source Files\editor\ainb</Filter>
     </ClCompile>
@@ -212,6 +209,21 @@
     </ClCompile>
     <ClCompile Include="tinyfiledialogs.c">
       <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_node_editor\crude_json.cpp">
+      <Filter>Source Files\imgui_node_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_node_editor\imgui_canvas.cpp">
+      <Filter>Source Files\imgui_node_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_node_editor\imgui_node_editor.cpp">
+      <Filter>Source Files\imgui_node_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_node_editor\imgui_node_editor_api.cpp">
+      <Filter>Source Files\imgui_node_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="AINBNode.cpp">
+      <Filter>Source Files\editor\ainb</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -335,17 +347,32 @@
     <ClInclude Include="AINBEditor.h">
       <Filter>Header Files\editor\ainb</Filter>
     </ClInclude>
-    <ClInclude Include="imgui_node_editor\imnodes_internal.h">
-      <Filter>Header Files\imgui_node_editor</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui_node_editor\imnodes.h">
-      <Filter>Header Files\imgui_node_editor</Filter>
-    </ClInclude>
-    <ClInclude Include="AINBNodeDefinitions.h">
-      <Filter>Header Files\file\ainb</Filter>
-    </ClInclude>
     <ClInclude Include="tinyfiledialogs.h">
       <Filter>Header Files\external</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_node_editor\imgui_node_editor_internal.h">
+      <Filter>Header Files\imgui_node_editor</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_node_editor\crude_json.h">
+      <Filter>Header Files\imgui_node_editor</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_node_editor\imgui_bezier_math.h">
+      <Filter>Header Files\imgui_node_editor</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_node_editor\imgui_canvas.h">
+      <Filter>Header Files\imgui_node_editor</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_node_editor\imgui_extra_math.h">
+      <Filter>Header Files\imgui_node_editor</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_node_editor\imgui_node_editor.h">
+      <Filter>Header Files\imgui_node_editor</Filter>
+    </ClInclude>
+    <ClInclude Include="AINBNode.h">
+      <Filter>Header Files\editor\ainb</Filter>
+    </ClInclude>
+    <ClInclude Include="AINBNodeDefinitions.h">
+      <Filter>Header Files\editor\ainb</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -363,6 +390,15 @@
     </None>
     <None Include="MapEditor_Bake_Collision.pack">
       <Filter>Resource Files</Filter>
+    </None>
+    <None Include="imgui_node_editor\imgui_bezier_math.inl">
+      <Filter>Source Files\imgui_node_editor</Filter>
+    </None>
+    <None Include="imgui_node_editor\imgui_extra_math.inl">
+      <Filter>Source Files\imgui_node_editor</Filter>
+    </None>
+    <None Include="imgui_node_editor\imgui_node_editor_internal.inl">
+      <Filter>Source Files\imgui_node_editor</Filter>
     </None>
   </ItemGroup>
 </Project>

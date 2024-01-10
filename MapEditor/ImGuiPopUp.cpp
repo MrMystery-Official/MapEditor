@@ -18,6 +18,12 @@ void ImGuiPopUp::Reset()
 	this->IntData = 0;
 }
 
+void ImGuiPopUp::UpdateScale(float Scale)
+{
+	this->m_Size.x *= Scale;
+	this->m_Size.y *= Scale;
+}
+
 void ImGuiPopUp::Begin()
 {
 	ImGui::SetNextWindowSize(this->m_Size);

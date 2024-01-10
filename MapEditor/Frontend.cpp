@@ -182,7 +182,6 @@ void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActo
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImNodes::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -231,6 +230,10 @@ void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActo
 	camera = Camera(WIDTH, HEIGHT, glm::vec3(0.0f, 0.0f, 2.0f));
 
 	NodeEditor.Initialize();
+
+	io.Fonts->Clear();
+	io.Fonts->AddFontFromFileTTF("FiraSans-Regular.ttf", floor(12 * 4.0f));
+	io.Fonts->Build();
 }
 
 void Frontend::CleanUp() {
@@ -246,7 +249,7 @@ void Frontend::CleanUp() {
 	PickingShader.Delete();
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
-	ImNodes::DestroyContext();
+	NodeEditor.Destroy();
 	ImGui::DestroyContext();
 
 	glfwDestroyWindow(Window);
@@ -380,10 +383,31 @@ void Frontend::Render() {
 	glClearColor(ClearColor.x * ClearColor.w, ClearColor.y * ClearColor.w, ClearColor.z * ClearColor.w, ClearColor.w);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	ImGui::NewFrame();
+
+	if (Config::UIScale == 0.0f)
+	{
+		Config::UIScale = ImGui::GetWindowDpiScale() * 1.5f;
+		ImGui::EndFrame();
+		ImGui::GetStyle().ScaleAllSizes(Config::UIScale);
+		ImGui::GetIO().FontGlobalScale = Config::UIScale / 4.0f;
+
+		DynamicPopUp.UpdateScale(Config::UIScale);
+		PhivePlacementPopUp.UpdateScale(Config::UIScale);
+		AddActorPopUp.UpdateScale(Config::UIScale);
+		GenerateHashesPopUp.UpdateScale(Config::UIScale);
+		StackActorsPopUp.UpdateScale(Config::UIScale);
+		AddLinkPopUp.UpdateScale(Config::UIScale);
+		AddRailPopUp.UpdateScale(Config::UIScale);
+		SetPathsPopUp.UpdateScale(Config::UIScale);
+		LoadMapPopUp.UpdateScale(Config::UIScale);
+		ExportModPopUp.UpdateScale(Config::UIScale);
+
+		return;
+	}
+
 	int width, height;
 	glfwGetFramebufferSize(Window, &width, &height);
-
-	ImGui::NewFrame();
 
 	ImGuiID DockSpace = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
@@ -1337,6 +1361,11 @@ void Frontend::Render() {
 	ImGui::End();
 	*/
 
+	if (!NodeEditor.m_File.Loaded)
+	{
+		NodeEditor.LoadAINB(Config::GetRomFSFile("Logic/Dungeon001_1800.logic.root.ainb"));
+	}
+
 	//AINB Drawing
 	ImGui::Begin("AINB Node Editor");
 	if (ImGui::IsWindowFocused()) PickedActorId = -1;
@@ -1350,8 +1379,8 @@ void Frontend::Render() {
 		ImGui::DockBuilderSetNodeSize(DockSpace, ImGui::GetMainViewport()->Size);
 
 		ImGuiID DockLeft, DockMiddle, DockRight;
-		ImGui::DockBuilderSplitNode(DockSpace, ImGuiDir_Left, 0.2f, &DockLeft, &DockMiddle);
-		ImGui::DockBuilderSplitNode(DockMiddle, ImGuiDir_Right, 0.25f, &DockRight, &DockMiddle);
+		ImGui::DockBuilderSplitNode(DockSpace, ImGuiDir_Left, 0.2f * Config::UIScale / 1.5f, &DockLeft, &DockMiddle);
+		ImGui::DockBuilderSplitNode(DockMiddle, ImGuiDir_Right, 0.3f * Config::UIScale / 1.5f, &DockRight, &DockMiddle);
 
 		ImGui::DockBuilderDockWindow("Actions", DockLeft);
 		ImGui::DockBuilderDockWindow("Map View", DockMiddle);

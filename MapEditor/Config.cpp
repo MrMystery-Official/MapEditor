@@ -13,6 +13,8 @@ std::string Config::BfresPath;
 std::string Config::InternalGameVersion = "100";
 std::string Config::ExportPath = "";
 
+float Config::UIScale = 0;
+
 std::string Config::GetWorkingDirFile(std::string Path)
 {
 	return WorkingDir + "/" + Path;

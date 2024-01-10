@@ -21,6 +21,8 @@ public:
 	bool BeginPopupModal();
 	void End();
 
+	void UpdateScale(float Scale);
+
 	std::vector<std::string>& GetData();
 
 	ImGuiPopUp(std::string Title, int SizeX, int SizeY, int DataSize);

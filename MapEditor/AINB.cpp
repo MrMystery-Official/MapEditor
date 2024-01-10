@@ -1,5 +1,17 @@
 #include "AINB.h"
 
+std::ostream& operator<<(std::ostream& os, Vector3F& vec) {
+	os << vec.GetX() << ", " << vec.GetY() << ", " << vec.GetZ();
+	return os;
+}
+
+std::string AINBFile::ValueToString(AINBFile::AINBValue Value)
+{
+	std::stringstream ss;
+	std::visit([&](auto& elem) { ss << elem; }, Value);
+	return ss.str();
+}
+
 std::string AINBFile::NodeTypeToString(AINBFile::NodeTypes Type)
 {
 	switch (Type)
@@ -669,6 +681,7 @@ AINBFile::AINBFile(std::vector<unsigned char> Bytes) {
 				for (uint32_t Offset : Offsets) {
 					Reader.Seek(Offset, BinaryVectorReader::Position::Begin);
 					LinkedNodeInfo Info;
+					Info.Type = static_cast<AINBFile::LinkedNodeMapping>(i);
 					Info.NodeIndex = Reader.ReadUInt32();
 					if (i == 0 || i == 4 || i == 5) {
 						Info.Parameter = ReadStringFromStringPool(&Reader, Reader.ReadUInt32());

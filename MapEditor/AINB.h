@@ -239,6 +239,7 @@ file_category = {"AI" : 0, "Logic" : 1, "Sequence" : 2}
 	static const uint32_t LinkedNodeTypeCount = static_cast<uint32_t>(LinkedNodeMapping::_Count);
 
 	struct LinkedNodeInfo {
+		LinkedNodeMapping Type;
 		uint32_t NodeIndex;
 		std::string Parameter = "";
 		std::string Condition = "";
@@ -318,6 +319,7 @@ file_category = {"AI" : 0, "Logic" : 1, "Sequence" : 2}
 	bool Loaded = false;
 
 	static std::string NodeTypeToString(AINBFile::NodeTypes Type);
+	static std::string ValueToString(AINBFile::AINBValue Value);
 	std::string ReadStringFromStringPool(BinaryVectorReader* Reader, uint32_t Offset);
 	GUIDData ReadGUID(BinaryVectorReader* Reader);
 	Node& GetBaseNode();
