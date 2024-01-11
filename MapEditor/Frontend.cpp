@@ -212,7 +212,7 @@ void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActo
 
 	ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
 	for (ImGuiPlatformMonitor monitor : platform_io.Monitors) {
-		ImFont* font = io.Fonts->AddFontFromFileTTF("D:/Assets/Fonts/Fira-Sans/FiraSans-Regular.ttf", floor(14 * monitor.DpiScale));
+		ImFont* font = io.Fonts->AddFontFromFileTTF("FiraSans-Regular.ttf", floor(14 * (monitor.DpiScale * 1.2f)));
 		Config::Fonts->emplace(monitor.DpiScale, font);
 	}
 
@@ -253,10 +253,10 @@ void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActo
 }
 
 void Frontend::OnViewportChanged(ImGuiViewport* vp) {
-	if (Config::UIScale != vp->DpiScale) {
+	if (Config::UIScale != vp->DpiScale * 1.2f) {
 		ImGuiStyle& style = ImGui::GetStyle();
-		style.ScaleAllSizes(vp->DpiScale);
-		Config::UIScale = vp->DpiScale;
+		Config::UIScale = vp->DpiScale * 1.2f;
+		style.ScaleAllSizes(Config::UIScale);
 		ImGui::SetCurrentFont(Config::Fonts->at(vp->DpiScale));
 
 		DynamicPopUp.UpdateScale(Config::UIScale);
@@ -1382,8 +1382,8 @@ PopupRendering:
 		ImGui::DockBuilderSetNodeSize(DockSpace, ImGui::GetMainViewport()->Size);
 
 		ImGuiID DockLeft, DockMiddle, DockRight;
-		ImGui::DockBuilderSplitNode(DockSpace, ImGuiDir_Left, 0.2f * Config::UIScale / 1.5f, &DockLeft, &DockMiddle);
-		ImGui::DockBuilderSplitNode(DockMiddle, ImGuiDir_Right, 0.3f * Config::UIScale / 1.5f, &DockRight, &DockMiddle);
+		ImGui::DockBuilderSplitNode(DockSpace, ImGuiDir_Left, 0.2f * Config::UIScale / 1.2f, &DockLeft, &DockMiddle);
+		ImGui::DockBuilderSplitNode(DockMiddle, ImGuiDir_Right, 0.3f * Config::UIScale / 1.2f, &DockRight, &DockMiddle);
 
 		ImGui::DockBuilderDockWindow("Actions", DockLeft);
 		ImGui::DockBuilderDockWindow("Map View", DockMiddle);
