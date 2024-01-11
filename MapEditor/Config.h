@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <imgui.h>
+#include <map>
 #include "Byml.h"
 
 namespace Config
@@ -18,6 +20,7 @@ namespace Config
 	extern std::string ExportPath;
 
 	extern float UIScale;
+	extern std::map<float, ImFont*>* Fonts;
 
 	std::string GetRomFSFile(std::string LocalPath, bool Replaceable = true);
 	std::string GetBfresFile(std::string Name);

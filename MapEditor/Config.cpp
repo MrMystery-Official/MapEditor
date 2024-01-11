@@ -14,6 +14,7 @@ std::string Config::InternalGameVersion = "100";
 std::string Config::ExportPath = "";
 
 float Config::UIScale = 0;
+std::map<float, ImFont*>* Config::Fonts = new std::map<float, ImFont*>();
 
 std::string Config::GetWorkingDirFile(std::string Path)
 {

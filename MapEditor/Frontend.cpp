@@ -42,6 +42,18 @@ RenderSettingsStruct RenderSettings;
 bool LoadedEConfig = false;
 bool LoadedDungeon = true;
 
+ImGuiPopUp DynamicPopUp("Add dynamic data", 400, 100, 2);
+ImGuiPopUp PhivePlacementPopUp("Add Phive placement", 400, 100, 2);
+ImGuiPopUp AddActorPopUp("Add Actor", 400, 124, 3);
+ImGuiPopUp GenerateHashesPopUp("Generate Hashes (Phive)", 777, 220, 1);
+ImGuiPopUp StackActorsPopUp("Stack actors", 600, 170, 5);
+ImGuiPopUp AddLinkPopUp("Add Link", 400, 146, 4);
+ImGuiPopUp AddRailPopUp("Add Rail", 400, 123, 3);
+
+ImGuiPopUp SetPathsPopUp("Setup", 600, 181, 2);
+ImGuiPopUp LoadMapPopUp("Open level", 468, 118, 1);
+ImGuiPopUp ExportModPopUp("Export mod", 468, 78, 1);
+
 namespace Frustum
 {
 	float m_Frustum[6][4];
@@ -198,6 +210,14 @@ void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActo
 	ImGui_ImplGlfw_InitForOpenGL(Window, true);
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
+	ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
+	for (ImGuiPlatformMonitor monitor : platform_io.Monitors) {
+		ImFont* font = io.Fonts->AddFontFromFileTTF("D:/Assets/Fonts/Fira-Sans/FiraSans-Regular.ttf", floor(14 * monitor.DpiScale));
+		Config::Fonts->emplace(monitor.DpiScale, font);
+	}
+
+	platform_io.Platform_OnChangedViewport = OnViewportChanged;
+
 	TextureShader = Shader("default.vert", "default.frag");
 	PickingShader = Shader("picking.vert", "picking.frag");
 
@@ -230,10 +250,26 @@ void Frontend::Initialize(bool LoadedEditorConfig, std::vector<Actor>& LocalActo
 	camera = Camera(WIDTH, HEIGHT, glm::vec3(0.0f, 0.0f, 2.0f));
 
 	NodeEditor.Initialize();
+}
 
-	io.Fonts->Clear();
-	io.Fonts->AddFontFromFileTTF("FiraSans-Regular.ttf", floor(12 * 4.0f));
-	io.Fonts->Build();
+void Frontend::OnViewportChanged(ImGuiViewport* vp) {
+	if (Config::UIScale != vp->DpiScale) {
+		ImGuiStyle& style = ImGui::GetStyle();
+		style.ScaleAllSizes(vp->DpiScale);
+		Config::UIScale = vp->DpiScale;
+		ImGui::SetCurrentFont(Config::Fonts->at(vp->DpiScale));
+
+		DynamicPopUp.UpdateScale(Config::UIScale);
+		PhivePlacementPopUp.UpdateScale(Config::UIScale);
+		AddActorPopUp.UpdateScale(Config::UIScale);
+		GenerateHashesPopUp.UpdateScale(Config::UIScale);
+		StackActorsPopUp.UpdateScale(Config::UIScale);
+		AddLinkPopUp.UpdateScale(Config::UIScale);
+		AddRailPopUp.UpdateScale(Config::UIScale);
+		SetPathsPopUp.UpdateScale(Config::UIScale);
+		LoadMapPopUp.UpdateScale(Config::UIScale);
+		ExportModPopUp.UpdateScale(Config::UIScale);
+	}
 }
 
 void Frontend::CleanUp() {
@@ -298,7 +334,7 @@ void CheckActorSelection(ImVec2 SceneWindowSize, ImVec2 MousePos)
 		PickingShader.Activate();
 
 		camera.Matrix(45.0f, 0.1f, 100.0f, PickingShader, "camMatrix");
-		
+
 		for (int ActorIndex = 0; ActorIndex < Actors->size(); ActorIndex++)
 		{
 			Actor& Actor = Actors->at(ActorIndex);
@@ -342,7 +378,7 @@ void CheckActorSelection(ImVec2 SceneWindowSize, ImVec2 MousePos)
 				glDrawElements(GL_TRIANGLES, sizeof(int) * LODModel->Faces[SubModelIndex].size(), GL_UNSIGNED_INT, 0);
 			}
 		}
-		
+
 		glReadBuffer(GL_COLOR_ATTACHMENT0);
 		unsigned char Data[3];
 
@@ -357,22 +393,10 @@ void CheckActorSelection(ImVec2 SceneWindowSize, ImVec2 MousePos)
 		{
 			PickedActorId = -1;
 		}
-		
+
 		glReadBuffer(GL_NONE);
 	}
 }
-
-ImGuiPopUp DynamicPopUp("Add dynamic data", 400, 100, 2);
-ImGuiPopUp PhivePlacementPopUp("Add Phive placement", 400, 100, 2);
-ImGuiPopUp AddActorPopUp("Add Actor", 400, 124, 3);
-ImGuiPopUp GenerateHashesPopUp("Generate Hashes (Phive)", 777, 220, 1);
-ImGuiPopUp StackActorsPopUp("Stack actors", 600, 170, 5);
-ImGuiPopUp AddLinkPopUp("Add Link", 400, 146, 4);
-ImGuiPopUp AddRailPopUp("Add Rail", 400, 123, 3);
-
-ImGuiPopUp SetPathsPopUp("Setup", 600, 181, 2);
-ImGuiPopUp LoadMapPopUp("Open level", 468, 118, 1);
-ImGuiPopUp ExportModPopUp("Export mod", 468, 78, 1);
 
 void Frontend::Render() {
 	glfwPollEvents();
@@ -384,27 +408,6 @@ void Frontend::Render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	ImGui::NewFrame();
-
-	if (Config::UIScale == 0.0f)
-	{
-		Config::UIScale = ImGui::GetWindowDpiScale() * 1.5f;
-		ImGui::EndFrame();
-		ImGui::GetStyle().ScaleAllSizes(Config::UIScale);
-		ImGui::GetIO().FontGlobalScale = Config::UIScale / 4.0f;
-
-		DynamicPopUp.UpdateScale(Config::UIScale);
-		PhivePlacementPopUp.UpdateScale(Config::UIScale);
-		AddActorPopUp.UpdateScale(Config::UIScale);
-		GenerateHashesPopUp.UpdateScale(Config::UIScale);
-		StackActorsPopUp.UpdateScale(Config::UIScale);
-		AddLinkPopUp.UpdateScale(Config::UIScale);
-		AddRailPopUp.UpdateScale(Config::UIScale);
-		SetPathsPopUp.UpdateScale(Config::UIScale);
-		LoadMapPopUp.UpdateScale(Config::UIScale);
-		ExportModPopUp.UpdateScale(Config::UIScale);
-
-		return;
-	}
 
 	int width, height;
 	glfwGetFramebufferSize(Window, &width, &height);
@@ -704,7 +707,7 @@ void Frontend::Render() {
 
 	if (ImGui::Button("Stack actors"))
 	{
-		if(PickedActorId != -1)
+		if (PickedActorId != -1)
 			StackActorsPopUp.GetData()[0] = std::to_string(Actors->at(PickedActorId).GetSRTHash());
 
 		StackActorsPopUp.IsOpen() = true;
@@ -875,7 +878,7 @@ void Frontend::Render() {
 				{
 					std::string CollisionFileName = DirEntry.path().string();
 					Util::ReplaceString(CollisionFileName, Config::GetRomFSFile("Phive/Shape/Dcc") + "\\", "");
-					if (CollisionFileName.rfind(SelectedActor.GetGyml()  + "__Physical", 0) == 0)
+					if (CollisionFileName.rfind(SelectedActor.GetGyml() + "__Physical", 0) == 0)
 					{
 						Found = true;
 						Util::ReplaceString(CollisionFileName, "Nin_NX_NVN.bphsh.zs", "phsh");
@@ -1076,7 +1079,7 @@ void Frontend::Render() {
 		}
 	}
 
-	PopupRendering:
+PopupRendering:
 
 	ImGui::End(); //End the Actor information
 
@@ -1128,7 +1131,7 @@ void Frontend::Render() {
 			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
 			const char* TypeDropdownItems[] = { "SmallDungeon", "MainField" };
 			ImGui::Combo("Type", reinterpret_cast<int*>(&LoadMapPopUp.IntData), TypeDropdownItems, IM_ARRAYSIZE(TypeDropdownItems));
-			ImGui::InputText(LoadMapPopUp.IntData == 0 ? ("Dungeon ID (e.g. 001)") : ("MainField section (e.g. E-6)"), & LoadMapPopUp.GetData()[0]);
+			ImGui::InputText(LoadMapPopUp.IntData == 0 ? ("Dungeon ID (e.g. 001)") : ("MainField section (e.g. E-6)"), &LoadMapPopUp.GetData()[0]);
 			if (ImGui::Button("Load") && LoadMapPopUp.GetData()[0].length() == 3)
 			{
 				LoadMapPopUp.IsOpen() = false;
@@ -1270,7 +1273,7 @@ void Frontend::Render() {
 
 					GenerateHashesPopUp.GetData()[0] = std::to_string(BiggestMergedByml.first);
 				}
-			} 
+			}
 			ImGui::NewLine();
 			if (ImGui::Button("Confirm"))
 			{
@@ -1411,7 +1414,7 @@ void Frontend::Render() {
 	for (int ActorIndex = 0; ActorIndex < Actors->size(); ActorIndex++)
 	{
 		Actor& Actor = Actors->at(ActorIndex);
-		
+
 		if (Actor.GetModel()->IsDefaultModel() && !RenderSettings.Invisible) continue;
 		if (!Actor.GetModel()->IsDefaultModel() && !RenderSettings.Visible) continue;
 		if (Actor.GetGyml().ends_with("_Far") && !RenderSettings.FarActors) continue;
@@ -1445,14 +1448,14 @@ void Frontend::Render() {
 
 		glUniformMatrix4fv(glGetUniformLocation(TextureShader.ID, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(model));
 
-			for (int SubModelIndex = 0; SubModelIndex < LODModel->GL_Textures.size(); SubModelIndex++)
-			{
-				LODModel->GL_Textures[SubModelIndex]->texUnit(TextureShader, "Texture", 0);
-				LODModel->GL_Textures[SubModelIndex]->Bind();
-				LODModel->GL_VAO[SubModelIndex].Bind();
+		for (int SubModelIndex = 0; SubModelIndex < LODModel->GL_Textures.size(); SubModelIndex++)
+		{
+			LODModel->GL_Textures[SubModelIndex]->texUnit(TextureShader, "Texture", 0);
+			LODModel->GL_Textures[SubModelIndex]->Bind();
+			LODModel->GL_VAO[SubModelIndex].Bind();
 
-				glDrawElements(GL_TRIANGLES, sizeof(int) * LODModel->Faces[SubModelIndex].size(), GL_UNSIGNED_INT, 0);
-			}
+			glDrawElements(GL_TRIANGLES, sizeof(int) * LODModel->Faces[SubModelIndex].size(), GL_UNSIGNED_INT, 0);
+		}
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

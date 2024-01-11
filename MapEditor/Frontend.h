@@ -36,4 +36,6 @@ namespace Frontend {
 	void CleanUp();
 	bool ShouldWindowClose();
 	void Render();
+
+	static void OnViewportChanged(ImGuiViewport* vp);
 };
