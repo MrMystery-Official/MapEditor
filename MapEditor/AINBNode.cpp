@@ -398,7 +398,6 @@ void AINBImGuiNode::Draw() {
 
     ImGui::SameLine();
     ImGui::Text("%s", Node->Name.c_str());
-    std::cout << Node->Name << std::endl;
 
     HeaderMin = ImGui::GetItemRectMin() - ImVec2(IconSize.x + ImGui::GetStyle().ItemSpacing.x + 8, 8);
     HeaderMax = ImVec2(HeaderMin.x + FrameWidth, ImGui::GetItemRectMax().y + 8);

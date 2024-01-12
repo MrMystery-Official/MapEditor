@@ -48,6 +48,8 @@ public:
         std::unordered_map<std::string, ImVec2> ExtraNodePos;
     };
 
+    static uint32_t NextID;
+
     std::vector<ed::PinId> ExtraPins;
     std::vector<NonNodeInput> NonNodeInputs;
     std::vector<FlowLink> FlowLinks;
@@ -87,7 +89,6 @@ private:
     ImVec2 IconSize = ImVec2(10, 10);
     int MinImmTextboxWidth = 150;
 
-    static uint32_t NextID;
     ed::NodeId static MakeNodeID() { return ++NextID; }
     ed::PinId static MakePinID() { return ++NextID; }
     ed::LinkId static MakeLinkID() { return ++NextID; }

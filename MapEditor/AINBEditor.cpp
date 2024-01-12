@@ -12,7 +12,6 @@ ImGuiPopUp AddAINBNodePopUp("Add node", 500, 210, 1);
 
 
 void AINBEditor::LoadAINB(std::string Path) {
-    std::cout << "LOAD\n";
     if (!this->m_File.Loaded)
     {
         AddAINBNodePopUp.UpdateScale(Config::UIScale);
@@ -184,7 +183,11 @@ void AINBEditor::DrawNodeEditor()
             }
 
             this->m_File.Nodes.push_back(Node);
-            this->m_GuiNodes.emplace_back(&this->m_File.Nodes[this->m_File.Nodes.size() - 1]);
+            this->m_GuiNodes.clear();
+            AINBImGuiNode::NextID = 0;
+            for (AINBFile::Node& node : this->m_File.Nodes) {
+                this->m_GuiNodes.emplace_back(&node);
+            }
         }
 
         AddAINBNodePopUp.Reset();
