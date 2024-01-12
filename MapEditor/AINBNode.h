@@ -56,7 +56,7 @@ public:
     std::unordered_map<std::string, ed::PinId> NameToPinID;
     std::unordered_map<int, ed::PinId> IdxToID[3];
 
-    AINBImGuiNode(AINBFile::Node& Node);
+    AINBImGuiNode(AINBFile::Node* Node);
 
     void DrawLinks(std::vector<AINBImGuiNode>& Nodes);
     void Draw();
@@ -70,7 +70,7 @@ public:
     void LoadAuxInfo(AuxInfo& auxInfo);
 
 private:
-    AINBFile::Node* Node = nullptr;
+    AINBFile::Node* Node;
 
     int FrameWidth;
     ImVec2 HeaderMin;

@@ -28,6 +28,7 @@ private:
 	std::string m_SelectedCommand = "";
 	ed::LinkId m_SelectedLink;
 	std::unordered_map<int, AINBImGuiNode::AuxInfo> m_NewAuxInfos;
+	std::vector<std::string> m_NodeNames;
 
 	void AutoLayout();
 };

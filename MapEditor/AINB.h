@@ -163,7 +163,7 @@ file_category = {"AI" : 0, "Logic" : 1, "Sequence" : 2}
 		std::string Class;
 		int16_t NodeIndex;
 		int16_t ParameterIndex;
-		int16_t MultiCount;
+		int16_t MultiCount = 0xFFFF;
 		int16_t MultiIndex = 0xFFFF;
 		std::vector<FlagsStruct> Flags;
 		uint16_t GlobalParametersIndex = 0xFFFF;
@@ -263,11 +263,11 @@ file_category = {"AI" : 0, "Logic" : 1, "Sequence" : 2}
 		std::vector<FlagsStruct> Flags;
 		std::string Name;
 		uint32_t NameHash;
-		uint32_t ParametersOffset;
-		uint16_t EXBFunctionCount;
-		uint16_t EXBIOSize;
+		uint32_t ParametersOffset = 0;
+		uint16_t EXBFunctionCount = 0;
+		uint16_t EXBIOSize = 0;
 		uint16_t MultiParamCount = 0;
-		uint32_t BaseAttachmentIndex;
+		uint32_t BaseAttachmentIndex = 0;
 		uint16_t BasePreconditionNode = 0;
 		uint16_t PreconditionCount = 0;
 		GUIDData GUID;

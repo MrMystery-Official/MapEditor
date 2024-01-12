@@ -8,12 +8,21 @@
 
 #include "tinyfiledialogs.h"
 
+ImGuiPopUp AddAINBNodePopUp("Add node", 500, 210, 1);
+
+
 void AINBEditor::LoadAINB(std::string Path) {
+    std::cout << "LOAD\n";
+    if (!this->m_File.Loaded)
+    {
+        AddAINBNodePopUp.UpdateScale(Config::UIScale);
+    }
+
     this->m_File = AINBFile(Path);
 
     this->m_GuiNodes.clear();
     for (AINBFile::Node& node : this->m_File.Nodes) {
-        this->m_GuiNodes.emplace_back(node);
+        this->m_GuiNodes.emplace_back(&node);
     }
 
     if (this->m_Context != nullptr) {
@@ -97,10 +106,132 @@ void AINBEditor::AutoLayout() {
 void AINBEditor::DrawNodeEditor()
 {
     bool wantAutoLayout = ImGui::Button("Auto layout");
+    ImGui::SameLine();
     if (ImGui::Button("Save"))
     {
         this->m_File.Write(Config::GetWorkingDirFile("Save/Logic/" + this->m_File.Header.FileName + ".ainb"));
     }
+    if (ImGui::Button("Add node"))
+    {
+        AddAINBNodePopUp.IsOpen() = true;
+    }
+    if (AddAINBNodePopUp.IsCompleted())
+    {
+
+        AINBFile::Node Node;
+        Node.NodeIndex = this->m_File.Nodes.size();
+        Node.Type = (uint16_t)AINBFile::NodeTypes::UserDefined;
+        Node.AttachmentCount = 0;
+        Node.Name = AddAINBNodePopUp.GetData()[0];
+
+        Node.InputParameters.resize(6);
+        Node.OutputParameters.resize(6);
+        Node.ImmediateParameters.resize(6);
+
+        AINBNodeDefinitions::NodeDefinition* Definition = AINBNodeDefinitions::GetNodeDefinition(Node.Name);
+
+        if (Definition != nullptr)
+        {
+            Node.NameHash = Definition->NameHash;
+            Node.Type = Definition->Type;
+            for (int Type = 0; Type < AINBFile::ValueTypeCount; Type++)
+            {
+                for (AINBNodeDefinitions::NodeDefinitionOutputParameter Param : Definition->OutputParameters[Type])
+                {
+                    AINBFile::OutputEntry Entry;
+                    Entry.Name = Param.Name;
+                    Entry.Class = Param.Class;
+                    Entry.SetPointerFlagsBitZero = Param.SetPointerFlagsBitZero;
+                    Node.OutputParameters[Type].push_back(Entry);
+                }
+                for (AINBNodeDefinitions::NodeDefinitionImmediateParameter Param : Definition->ImmediateParameters[Type])
+                {
+                    AINBFile::ImmediateParameter Entry;
+                    Entry.Name = Param.Name;
+                    Entry.Class = Param.Class;
+                    Entry.ValueType = (int)Param.ValueType;
+                    switch (Param.ValueType)
+                    {
+                    case AINBFile::ValueType::Bool:
+                        Entry.Value = false;
+                        break;
+                    case AINBFile::ValueType::Int:
+                        Entry.Value = (uint32_t)0;
+                        break;
+                    case AINBFile::ValueType::Float:
+                        Entry.Value = 0.0f;
+                        break;
+                    case AINBFile::ValueType::String:
+                        Entry.Value = "None";
+                        break;
+                    case AINBFile::ValueType::Vec3f:
+                        Entry.Value = Vector3F(0.0f, 0.0f, 0.0f);
+                        break;
+                    }
+                    Node.ImmediateParameters[Type].push_back(Entry);
+                }
+                for (AINBNodeDefinitions::NodeDefinitionInputParameter Param : Definition->InputParameters[Type])
+                {
+                    AINBFile::InputEntry Entry;
+                    Entry.Name = Param.Name;
+                    Entry.NodeIndex = -1;
+                    Entry.ParameterIndex = -1;
+                    Entry.Class = Param.Class;
+                    Entry.ValueType = (int)Param.ValueType;
+                    Entry.Value = Param.Value;
+                    Node.InputParameters[Type].push_back(Entry);
+                }
+            }
+
+            this->m_File.Nodes.push_back(Node);
+            this->m_GuiNodes.emplace_back(&this->m_File.Nodes[this->m_File.Nodes.size() - 1]);
+        }
+
+        AddAINBNodePopUp.Reset();
+    }
+    if (AddAINBNodePopUp.IsOpen())
+    {
+        this->m_NodeNames.clear();
+        for (AINBNodeDefinitions::NodeDefinition Def : AINBNodeDefinitions::NodeDefinitions)
+        {
+            if (Def.Name.find(AddAINBNodePopUp.GetData()[0]) != std::string::npos)
+            {
+                this->m_NodeNames.push_back(Def.Name);
+            }
+        }
+
+        AddAINBNodePopUp.Begin();
+        if (AddAINBNodePopUp.BeginPopupModal())
+        {
+            ImGui::InputText("Search", &AddAINBNodePopUp.GetData()[0]);
+
+            int selected = 0;
+
+            if (ImGui::ListBox("##ListBox", &selected,
+                [](void* vec, int idx, const char** out_text) {
+                    std::vector<std::string>* vector = reinterpret_cast<std::vector<std::string>*>(vec);
+                    if (idx < 0 || idx >= vector->size())return false;
+                    *out_text = vector->at(idx).c_str();
+                    return true;
+                }, reinterpret_cast<void*>(&this->m_NodeNames), this->m_NodeNames.size()))
+            {
+                AddAINBNodePopUp.GetData()[0] = this->m_NodeNames[selected];
+            }
+
+            if (ImGui::Button("Add"))
+            {
+                AddAINBNodePopUp.IsOpen() = false;
+                AddAINBNodePopUp.IsCompleted() = true;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Return"))
+            {
+                AddAINBNodePopUp.Reset();
+            }
+        }
+        AddAINBNodePopUp.End();
+    }
+
     ImGui::Separator();
 
     ed::SetCurrentEditor(this->m_Context);
