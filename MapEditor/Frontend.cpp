@@ -798,288 +798,307 @@ void Frontend::Render() {
 
 	ImGui::End();
 
+	if (!NodeEditor.m_File.Loaded)
+	{
+		NodeEditor.LoadAINB(Config::GetRomFSFile("Logic/Dungeon001_1800.logic.root.ainb"));
+	}
+
+	//AINB Drawing
+	bool AINBWindowFocused = ImGui::Begin("AINB Node Editor");
+	if(AINBWindowFocused)
+		NodeEditor.DrawNodeEditor();
+	ImGui::End();
+
 	//Actor properties window
 	ImGui::Begin("Properties");
 
-	if (PickedActorId != -1)
+	if (AINBWindowFocused)
 	{
-		if (ImGui::Button("Delete"))
+		NodeEditor.DrawProperties();
+	}
+	else
+	{
+		if (PickedActorId != -1)
 		{
-			Actors->erase(Actors->begin() + PickedActorId);
-
-			PickedActorId = -1;
-
-			goto PopupRendering;
-		}
-
-		if (ImGui::Button("Duplicate"))
-		{
-			Actor NewActor = Actors->at(PickedActorId);
-
-			bool Physics = !NewActor.GetPhive().Placement.empty();
-
-			HashMgr::ArtificialHash NewHash = HashMgr::GetArtificialHash(Physics);
-
-			NewActor.SetHash(NewHash.ActorHash);
-			NewActor.SetSRTHash(NewHash.SRTHash);
-			if (Physics)
+			if (ImGui::Button("Delete"))
 			{
-				std::map<std::string, std::string>::iterator Iter = NewActor.GetPhive().Placement.find("ID");
-				if (Iter != NewActor.GetPhive().Placement.end())
-					Iter->second = std::to_string(NewHash.PhiveHash);
+				Actors->erase(Actors->begin() + PickedActorId);
+
+				PickedActorId = -1;
+
+				goto PopupRendering;
 			}
 
-			Actors->resize(Actors->size() + 1);
-
-			(*Actors)[Actors->size() - 1] = NewActor;
-
-			PickedActorId = Actors->size() - 1;
-		}
-
-		Actor& SelectedActor = Actors->at(PickedActorId);
-
-		ImGui::NewLine();
-		ImGui::Text("Debug");
-		ImGui::Text(SelectedActor.GetCategory().c_str());
-		ImGui::NewLine();
-		/*Actor identification*/
-		ImGui::Text("Identification");
-		ImGui::InputText("Gyaml", &SelectedActor.GetGyml());
-		ImGui::InputScalar("Hash", ImGuiDataType_::ImGuiDataType_U64, &SelectedActor.GetHash());
-		ImGui::InputScalar("SRTHash", ImGuiDataType_::ImGuiDataType_U32, &SelectedActor.GetSRTHash());
-		ImGui::InputText("Name", &SelectedActor.GetName());
-		const char* TypeDropdownItems[] = { "Static", "Dynamic" };
-		ImGui::Combo("Type", reinterpret_cast<int*>(&SelectedActor.GetType()), TypeDropdownItems, IM_ARRAYSIZE(TypeDropdownItems));
-		if (HashMgr::GetHashes().size() > 0)
-		{
-			if (ImGui::Button("Enable physics"))
+			if (ImGui::Button("Duplicate"))
 			{
-				HashMgr::ArtificialHash NewHash = HashMgr::GetArtificialHash(true);
-				SelectedActor.SetHash(NewHash.ActorHash);
-				SelectedActor.SetSRTHash(NewHash.SRTHash);
-				std::map<std::string, std::string>::iterator Iter = SelectedActor.GetPhive().Placement.find("ID");
-				if (Iter != SelectedActor.GetPhive().Placement.end())
+				Actor NewActor = Actors->at(PickedActorId);
+
+				bool Physics = !NewActor.GetPhive().Placement.empty();
+
+				HashMgr::ArtificialHash NewHash = HashMgr::GetArtificialHash(Physics);
+
+				NewActor.SetHash(NewHash.ActorHash);
+				NewActor.SetSRTHash(NewHash.SRTHash);
+				if (Physics)
 				{
-					Iter->second = std::to_string(NewHash.PhiveHash);
+					std::map<std::string, std::string>::iterator Iter = NewActor.GetPhive().Placement.find("ID");
+					if (Iter != NewActor.GetPhive().Placement.end())
+						Iter->second = std::to_string(NewHash.PhiveHash);
+				}
+
+				Actors->resize(Actors->size() + 1);
+
+				(*Actors)[Actors->size() - 1] = NewActor;
+
+				PickedActorId = Actors->size() - 1;
+			}
+
+			Actor& SelectedActor = Actors->at(PickedActorId);
+
+			ImGui::NewLine();
+			ImGui::Text("Debug");
+			ImGui::Text(SelectedActor.GetCategory().c_str());
+			ImGui::NewLine();
+			/*Actor identification*/
+			ImGui::Text("Identification");
+			ImGui::InputText("Gyaml", &SelectedActor.GetGyml());
+			ImGui::InputScalar("Hash", ImGuiDataType_::ImGuiDataType_U64, &SelectedActor.GetHash());
+			ImGui::InputScalar("SRTHash", ImGuiDataType_::ImGuiDataType_U32, &SelectedActor.GetSRTHash());
+			ImGui::InputText("Name", &SelectedActor.GetName());
+			const char* TypeDropdownItems[] = { "Static", "Dynamic" };
+			ImGui::Combo("Type", reinterpret_cast<int*>(&SelectedActor.GetType()), TypeDropdownItems, IM_ARRAYSIZE(TypeDropdownItems));
+			if (HashMgr::GetHashes().size() > 0)
+			{
+				if (ImGui::Button("Enable physics"))
+				{
+					HashMgr::ArtificialHash NewHash = HashMgr::GetArtificialHash(true);
+					SelectedActor.SetHash(NewHash.ActorHash);
+					SelectedActor.SetSRTHash(NewHash.SRTHash);
+					std::map<std::string, std::string>::iterator Iter = SelectedActor.GetPhive().Placement.find("ID");
+					if (Iter != SelectedActor.GetPhive().Placement.end())
+					{
+						Iter->second = std::to_string(NewHash.PhiveHash);
+					}
+					else
+					{
+						SelectedActor.GetPhive().Placement.insert({ "ID", std::to_string(NewHash.PhiveHash) });
+					}
+				}
+			}
+			if (SelectedActor.GetGyml().rfind("MapEditor_Collision_", 0) != 0)
+			{
+				if (ImGui::Button("Add collision"))
+				{
+					using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;
+					bool Found = false;
+					for (const auto& DirEntry : recursive_directory_iterator(Config::GetRomFSFile("Phive/Shape/Dcc")))
+					{
+						std::string CollisionFileName = DirEntry.path().string();
+						Util::ReplaceString(CollisionFileName, Config::GetRomFSFile("Phive/Shape/Dcc") + "\\", "");
+						if (CollisionFileName.rfind(SelectedActor.GetGyml() + "__Physical", 0) == 0)
+						{
+							Found = true;
+							Util::ReplaceString(CollisionFileName, "Nin_NX_NVN.bphsh.zs", "phsh");
+							std::cout << "Collision File: " << CollisionFileName << std::endl;
+
+							Actor NewActor;
+
+							HashMgr::ArtificialHash NewHash = HashMgr::GetArtificialHash(false);
+
+							NewActor.SetGyml("MapEditor_Collision_File");
+							NewActor.SetHash(NewHash.ActorHash);
+							NewActor.SetSRTHash(NewHash.SRTHash);
+
+							NewActor.SetTranslate(SelectedActor.GetTranslate());
+							NewActor.SetRotate(SelectedActor.GetRotate());
+							NewActor.SetScale(SelectedActor.GetScale());
+
+							NewActor.SetCollisionFile(CollisionFileName);
+
+							NewActor.SetModel(ActorModelLibrary::GetModel("Collision"));
+
+							NewActor.SetType(Actor::Type::Static);
+
+							Actors->resize(Actors->size() + 1);
+							(*Actors)[Actors->size() - 1] = NewActor;
+
+							PickedActorId = Actors->size() - 1;
+						}
+					}
+					if (!Found)
+					{
+						std::cerr << "ERROR: Editor could not find a valid Binary Phive Shape File!\n";
+					}
+				}
+			}
+
+			/*
+			std::map<std::string, std::string> m_Presence; //Not required
+			std::vector<Rail> m_Rails; //Not required
+			std::vector<Link> m_Links; //Not rquired
+			*/
+
+			ImGui::NewLine();
+			ImGui::Text("Transform");
+			ImGui::InputFloat3("Translate", SelectedActor.GetTranslate().GetRawData());
+			ImGui::InputFloat3("Rotate", SelectedActor.GetRotate().GetRawData());
+			ImGui::InputFloat3("Scale", SelectedActor.GetScale().GetRawData());
+			ImGui::Checkbox("Bakeable", &SelectedActor.IsBakeable());
+			ImGui::Checkbox("Physics Stable", &SelectedActor.IsPhysicsStable());
+			ImGui::Checkbox("Force Active", &SelectedActor.IsForceActive());
+			ImGui::Checkbox("In Water", &SelectedActor.IsInWater());
+			ImGui::Checkbox("Turn Actor Near Enemy", &SelectedActor.IsTurnActorNearEnemy());
+
+			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+			ImGui::InputFloat("Move Radius", &SelectedActor.GetMoveRadius());
+			ImGui::InputFloat("Extra Create Radius", &SelectedActor.GetExtraCreateRadius());
+			//ImGui::PopItemWidth();
+
+			ImGui::NewLine();
+			ImGui::Text("Dynamic");
+			ImGui::SameLine();
+			int Identifier = 0;
+
+			if (ImGui::Button("Add"))
+			{
+				DynamicPopUp.IsOpen() = true;
+			}
+			if (DynamicPopUp.IsCompleted())
+			{
+				SelectedActor.AddDynamic(DynamicPopUp.GetData()[0], DynamicPopUp.GetData()[1]);
+				DynamicPopUp.Reset();
+			}
+
+			for (auto Iter = SelectedActor.GetDynamic().DynamicString.begin(); Iter != SelectedActor.GetDynamic().DynamicString.end(); ) {
+				auto& [Key, Value] = *Iter;
+
+				ImGui::InputText(Key.c_str(), &Value);
+				ImGui::Text(" ");
+				ImGui::SameLine();
+
+				if (ImGui::Button(std::string("Del##" + std::to_string(Identifier)).c_str()))
+				{
+					Iter = SelectedActor.GetDynamic().DynamicString.erase(Iter);
 				}
 				else
 				{
-					SelectedActor.GetPhive().Placement.insert({ "ID", std::to_string(NewHash.PhiveHash) });
+					Iter++;
 				}
+				Identifier++;
 			}
-		}
-		if (SelectedActor.GetGyml().rfind("MapEditor_Collision_", 0) != 0)
-		{
-			if (ImGui::Button("Add collision"))
+
+			ImGui::PopItemWidth();
+
+			ImGui::NewLine();
+			ImGui::Text("Phive");
+			if (SelectedActor.GetGyml().rfind("MapEditor_Collision_Cube_", 0) == 0)
 			{
-				using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;
-				bool Found = false;
-				for (const auto& DirEntry : recursive_directory_iterator(Config::GetRomFSFile("Phive/Shape/Dcc")))
-				{
-					std::string CollisionFileName = DirEntry.path().string();
-					Util::ReplaceString(CollisionFileName, Config::GetRomFSFile("Phive/Shape/Dcc") + "\\", "");
-					if (CollisionFileName.rfind(SelectedActor.GetGyml() + "__Physical", 0) == 0)
-					{
-						Found = true;
-						Util::ReplaceString(CollisionFileName, "Nin_NX_NVN.bphsh.zs", "phsh");
-						std::cout << "Collision File: " << CollisionFileName << std::endl;
+				ImGui::Checkbox("Climbable", &SelectedActor.IsCollisionClimbable());
+			}
+			if (SelectedActor.GetGyml().rfind("MapEditor_Collision_File", 0) == 0)
+			{
+				ImGui::InputText("Phive Shape", &SelectedActor.GetCollisionFile());
+			}
+			if (SelectedActor.GetGyml().rfind("MapEditor_Collision_Custom", 0) == 0)
+			{
+				ImGui::InputScalar("Collision Actor Link", ImGuiDataType_::ImGuiDataType_U32, &SelectedActor.GetCollisionSRTHash());
+			}
+			ImGui::Text("Phive - Placement");
+			ImGui::SameLine();
+			if (ImGui::Button("Add##1"))
+			{
+				PhivePlacementPopUp.IsOpen() = true;
+			}
+			if (PhivePlacementPopUp.IsCompleted())
+			{
+				SelectedActor.GetPhive().Placement.insert({ PhivePlacementPopUp.GetData()[0], PhivePlacementPopUp.GetData()[1] });
+				PhivePlacementPopUp.Reset();
+			}
+			for (auto Iter = SelectedActor.GetPhive().Placement.begin(); Iter != SelectedActor.GetPhive().Placement.end(); )
+			{
+				auto& [Key, Value] = *Iter;
 
-						Actor NewActor;
-
-						HashMgr::ArtificialHash NewHash = HashMgr::GetArtificialHash(false);
-
-						NewActor.SetGyml("MapEditor_Collision_File");
-						NewActor.SetHash(NewHash.ActorHash);
-						NewActor.SetSRTHash(NewHash.SRTHash);
-
-						NewActor.SetTranslate(SelectedActor.GetTranslate());
-						NewActor.SetRotate(SelectedActor.GetRotate());
-						NewActor.SetScale(SelectedActor.GetScale());
-
-						NewActor.SetCollisionFile(CollisionFileName);
-
-						NewActor.SetModel(ActorModelLibrary::GetModel("Collision"));
-
-						NewActor.SetType(Actor::Type::Static);
-
-						Actors->resize(Actors->size() + 1);
-						(*Actors)[Actors->size() - 1] = NewActor;
-
-						PickedActorId = Actors->size() - 1;
-					}
+				ImGui::InputText(Key.c_str(), &Value);
+				ImGui::Text(" ");
+				ImGui::SameLine();
+				if (ImGui::Button(std::string("Del##" + std::to_string(Identifier)).c_str())) {
+					Iter = SelectedActor.GetPhive().Placement.erase(Iter);
 				}
-				if (!Found)
-				{
-					std::cerr << "ERROR: Editor could not find a valid Binary Phive Shape File!\n";
+				else {
+					Iter++;
 				}
+				Identifier++;
 			}
-		}
 
-		/*
-		std::map<std::string, std::string> m_Presence; //Not required
-		std::vector<Rail> m_Rails; //Not required
-		std::vector<Link> m_Links; //Not rquired
-		*/
-
-		ImGui::NewLine();
-		ImGui::Text("Transform");
-		ImGui::InputFloat3("Translate", SelectedActor.GetTranslate().GetRawData());
-		ImGui::InputFloat3("Rotate", SelectedActor.GetRotate().GetRawData());
-		ImGui::InputFloat3("Scale", SelectedActor.GetScale().GetRawData());
-		ImGui::Checkbox("Bakeable", &SelectedActor.IsBakeable());
-		ImGui::Checkbox("Physics Stable", &SelectedActor.IsPhysicsStable());
-		ImGui::Checkbox("Force Active", &SelectedActor.IsForceActive());
-		ImGui::Checkbox("In Water", &SelectedActor.IsInWater());
-		ImGui::Checkbox("Turn Actor Near Enemy", &SelectedActor.IsTurnActorNearEnemy());
-
-		ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-		ImGui::InputFloat("Move Radius", &SelectedActor.GetMoveRadius());
-		ImGui::InputFloat("Extra Create Radius", &SelectedActor.GetExtraCreateRadius());
-		//ImGui::PopItemWidth();
-
-		ImGui::NewLine();
-		ImGui::Text("Dynamic");
-		ImGui::SameLine();
-		int Identifier = 0;
-
-		if (ImGui::Button("Add"))
-		{
-			DynamicPopUp.IsOpen() = true;
-		}
-		if (DynamicPopUp.IsCompleted())
-		{
-			SelectedActor.AddDynamic(DynamicPopUp.GetData()[0], DynamicPopUp.GetData()[1]);
-			DynamicPopUp.Reset();
-		}
-
-		for (auto Iter = SelectedActor.GetDynamic().DynamicString.begin(); Iter != SelectedActor.GetDynamic().DynamicString.end(); ) {
-			auto& [Key, Value] = *Iter;
-
-			ImGui::InputText(Key.c_str(), &Value);
-			ImGui::Text(" ");
+			ImGui::NewLine();
+			ImGui::Text("Links");
 			ImGui::SameLine();
-
-			if (ImGui::Button(std::string("Del##" + std::to_string(Identifier)).c_str()))
+			if (ImGui::Button("Add##2"))
 			{
-				Iter = SelectedActor.GetDynamic().DynamicString.erase(Iter);
+				AddLinkPopUp.IsOpen() = true;
 			}
-			else
+			if (AddLinkPopUp.IsCompleted())
 			{
-				Iter++;
+				SelectedActor.GetLinks().push_back({ stoull(AddLinkPopUp.GetData()[0]), AddLinkPopUp.GetData()[1], AddLinkPopUp.GetData()[2], stoull(AddLinkPopUp.GetData()[3]) });
+				AddLinkPopUp.Reset();
 			}
-			Identifier++;
-		}
+			for (auto it = SelectedActor.GetLinks().begin(); it != SelectedActor.GetLinks().end();)
+			{
+				Actor::Link& Link = *it;
+				ImGui::InputScalar(std::string("Dst##" + std::to_string(Identifier)).c_str(), ImGuiDataType_::ImGuiDataType_U64, &Link.Dst);
+				ImGui::InputText(std::string("Gyaml##" + std::to_string(Identifier + 1)).c_str(), &Link.Gyaml);
+				ImGui::InputText(std::string("Name##" + std::to_string(Identifier + 2)).c_str(), &Link.Name);
+				ImGui::InputScalar(std::string("Src##" + std::to_string(Identifier + 3)).c_str(), ImGuiDataType_::ImGuiDataType_U64, &Link.Src);
+				ImGui::Text(" ");
+				ImGui::SameLine();
+				if (ImGui::Button(std::string("Del##" + std::to_string(Identifier + 4)).c_str())) {
+					it = SelectedActor.GetLinks().erase(it);
+				}
+				else {
+					it++;
+				}
+				Identifier += 5;
+			}
 
-		ImGui::PopItemWidth();
-
-		ImGui::NewLine();
-		ImGui::Text("Phive");
-		if (SelectedActor.GetGyml().rfind("MapEditor_Collision_Cube_", 0) == 0)
-		{
-			ImGui::Checkbox("Climbable", &SelectedActor.IsCollisionClimbable());
-		}
-		if (SelectedActor.GetGyml().rfind("MapEditor_Collision_File", 0) == 0)
-		{
-			ImGui::InputText("Phive Shape", &SelectedActor.GetCollisionFile());
-		}
-		if (SelectedActor.GetGyml().rfind("MapEditor_Collision_Custom", 0) == 0)
-		{
-			ImGui::InputScalar("Collision Actor Link", ImGuiDataType_::ImGuiDataType_U32, &SelectedActor.GetCollisionSRTHash());
-		}
-		ImGui::Text("Phive - Placement");
-		ImGui::SameLine();
-		if (ImGui::Button("Add##1"))
-		{
-			PhivePlacementPopUp.IsOpen() = true;
-		}
-		if (PhivePlacementPopUp.IsCompleted())
-		{
-			SelectedActor.GetPhive().Placement.insert({ PhivePlacementPopUp.GetData()[0], PhivePlacementPopUp.GetData()[1] });
-			PhivePlacementPopUp.Reset();
-		}
-		for (auto Iter = SelectedActor.GetPhive().Placement.begin(); Iter != SelectedActor.GetPhive().Placement.end(); )
-		{
-			auto& [Key, Value] = *Iter;
-
-			ImGui::InputText(Key.c_str(), &Value);
-			ImGui::Text(" ");
+			ImGui::NewLine();
+			ImGui::Text("Rails");
 			ImGui::SameLine();
-			if (ImGui::Button(std::string("Del##" + std::to_string(Identifier)).c_str())) {
-				Iter = SelectedActor.GetPhive().Placement.erase(Iter);
+			if (ImGui::Button("Add##3"))
+			{
+				AddRailPopUp.IsOpen() = true;
 			}
-			else {
-				Iter++;
+			if (AddRailPopUp.IsCompleted())
+			{
+				SelectedActor.GetRails().push_back({ stoull(AddRailPopUp.GetData()[0]), AddRailPopUp.GetData()[1], AddRailPopUp.GetData()[2] });
+				AddRailPopUp.Reset();
 			}
-			Identifier++;
+			for (auto it = SelectedActor.GetRails().begin(); it != SelectedActor.GetRails().end();)
+			{
+				Actor::Rail& Rail = *it;
+				ImGui::InputScalar(std::string("Dst##" + std::to_string(Identifier)).c_str(), ImGuiDataType_::ImGuiDataType_U64, &Rail.Dst);
+				ImGui::InputText(std::string("Gyaml##" + std::to_string(Identifier + 1)).c_str(), &Rail.Gyaml);
+				ImGui::InputText(std::string("Name##" + std::to_string(Identifier + 2)).c_str(), &Rail.Name);
+				ImGui::Text(" ");
+				ImGui::SameLine();
+				if (ImGui::Button(std::string("Del##" + std::to_string(Identifier + 3)).c_str())) {
+					it = SelectedActor.GetRails().erase(it);
+				}
+				else {
+					it++;
+				}
+				Identifier += 4;
+			}
+
+			if (glfwGetKey(Window, GLFW_KEY_DELETE) == GLFW_PRESS)
+			{
+				Actors->erase(Actors->begin() + PickedActorId);
+				PickedActorId = -1;
+			}
 		}
 
-		ImGui::NewLine();
-		ImGui::Text("Links");
-		ImGui::SameLine();
-		if (ImGui::Button("Add##2"))
-		{
-			AddLinkPopUp.IsOpen() = true;
-		}
-		if (AddLinkPopUp.IsCompleted())
-		{
-			SelectedActor.GetLinks().push_back({ stoull(AddLinkPopUp.GetData()[0]), AddLinkPopUp.GetData()[1], AddLinkPopUp.GetData()[2], stoull(AddLinkPopUp.GetData()[3]) });
-			AddLinkPopUp.Reset();
-		}
-		for (auto it = SelectedActor.GetLinks().begin(); it != SelectedActor.GetLinks().end();)
-		{
-			Actor::Link& Link = *it;
-			ImGui::InputScalar(std::string("Dst##" + std::to_string(Identifier)).c_str(), ImGuiDataType_::ImGuiDataType_U64, &Link.Dst);
-			ImGui::InputText(std::string("Gyaml##" + std::to_string(Identifier + 1)).c_str(), &Link.Gyaml);
-			ImGui::InputText(std::string("Name##" + std::to_string(Identifier + 2)).c_str(), &Link.Name);
-			ImGui::InputScalar(std::string("Src##" + std::to_string(Identifier + 3)).c_str(), ImGuiDataType_::ImGuiDataType_U64, &Link.Src);
-			ImGui::Text(" ");
-			ImGui::SameLine();
-			if (ImGui::Button(std::string("Del##" + std::to_string(Identifier + 4)).c_str())) {
-				it = SelectedActor.GetLinks().erase(it);
-			}
-			else {
-				it++;
-			}
-			Identifier += 5;
-		}
+	PopupRendering:;
 
-		ImGui::NewLine();
-		ImGui::Text("Rails");
-		ImGui::SameLine();
-		if (ImGui::Button("Add##3"))
-		{
-			AddRailPopUp.IsOpen() = true;
-		}
-		if (AddRailPopUp.IsCompleted())
-		{
-			SelectedActor.GetRails().push_back({ stoull(AddRailPopUp.GetData()[0]), AddRailPopUp.GetData()[1], AddRailPopUp.GetData()[2] });
-			AddRailPopUp.Reset();
-		}
-		for (auto it = SelectedActor.GetRails().begin(); it != SelectedActor.GetRails().end();)
-		{
-			Actor::Rail& Rail = *it;
-			ImGui::InputScalar(std::string("Dst##" + std::to_string(Identifier)).c_str(), ImGuiDataType_::ImGuiDataType_U64, &Rail.Dst);
-			ImGui::InputText(std::string("Gyaml##" + std::to_string(Identifier + 1)).c_str(), &Rail.Gyaml);
-			ImGui::InputText(std::string("Name##" + std::to_string(Identifier + 2)).c_str(), &Rail.Name);
-			ImGui::Text(" ");
-			ImGui::SameLine();
-			if (ImGui::Button(std::string("Del##" + std::to_string(Identifier + 3)).c_str())) {
-				it = SelectedActor.GetRails().erase(it);
-			}
-			else {
-				it++;
-			}
-			Identifier += 4;
-		}
-
-		if (glfwGetKey(Window, GLFW_KEY_DELETE) == GLFW_PRESS)
-		{
-			Actors->erase(Actors->begin() + PickedActorId);
-			PickedActorId = -1;
-		}
 	}
-
-PopupRendering:
 
 	ImGui::End(); //End the Actor information
 
@@ -1363,17 +1382,6 @@ PopupRendering:
 	ImGui::Begin("Assets", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
 	ImGui::End();
 	*/
-
-	if (!NodeEditor.m_File.Loaded)
-	{
-		NodeEditor.LoadAINB(Config::GetRomFSFile("Logic/Dungeon001_1800.logic.root.ainb"));
-	}
-
-	//AINB Drawing
-	ImGui::Begin("AINB Node Editor");
-	if (ImGui::IsWindowFocused()) PickedActorId = -1;
-	NodeEditor.DrawNodeEditor();
-	ImGui::End();
 
 	if (FirstFrame)
 	{

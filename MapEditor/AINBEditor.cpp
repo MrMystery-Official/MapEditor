@@ -10,6 +10,7 @@
 
 void AINBEditor::LoadAINB(std::string Path) {
     this->m_File = AINBFile(Path);
+
     this->m_GuiNodes.clear();
     for (AINBFile::Node& node : this->m_File.Nodes) {
         this->m_GuiNodes.emplace_back(node);
@@ -96,6 +97,10 @@ void AINBEditor::AutoLayout() {
 void AINBEditor::DrawNodeEditor()
 {
     bool wantAutoLayout = ImGui::Button("Auto layout");
+    if (ImGui::Button("Save"))
+    {
+        this->m_File.Write(Config::GetWorkingDirFile("Save/Logic/" + this->m_File.Header.FileName + ".ainb"));
+    }
     ImGui::Separator();
 
     ed::SetCurrentEditor(this->m_Context);
@@ -125,10 +130,10 @@ void AINBEditor::DrawNodeEditor()
 
     if (ImGui::BeginPopup("Node Actions")) {
         if (ImGui::MenuItem("Copy default value")) {
-            for (const AINBImGuiNode& guiNode : this->m_GuiNodes) {
-                for (const AINBImGuiNode::NonNodeInput& input : guiNode.GetNonNodeInputs()) {
+            for (AINBImGuiNode& guiNode : this->m_GuiNodes) {
+                for (AINBImGuiNode::NonNodeInput& input : guiNode.GetNonNodeInputs()) {
                     if (input.GenNodeID == this->m_RightClickedNode) {
-                        ImGui::SetClipboardText(AINBFile::ValueToString(input.InputParam.Value).c_str());
+                        ImGui::SetClipboardText(AINBFile::ValueToString(input.InputParam->Value).c_str());
                         goto found;
                     }
                 }
@@ -138,10 +143,10 @@ void AINBEditor::DrawNodeEditor()
         ImGui::EndPopup();
     }
 
-    ed::NodeId selectedNodeID;
-    if (ed::GetSelectedNodes(&selectedNodeID, 1) > 0) {
+    ed::NodeId SelectedNodeID;
+    if (ed::GetSelectedNodes(&SelectedNodeID, 1) > 0) {
         for (AINBImGuiNode& guiNode : this->m_GuiNodes) {
-            if (guiNode.GetNodeID() == selectedNodeID) {
+            if (guiNode.GetNodeID() == SelectedNodeID) {
                 this->m_SelectedNodeIdx = guiNode.GetNode().NodeIndex;
                 break;
             }
@@ -152,14 +157,137 @@ void AINBEditor::DrawNodeEditor()
         this->m_SelectedNodeIdx = -1;
     }
 
+    if (!ed::GetSelectedLinks(&this->m_SelectedLink, 1))
+    {
+        this->m_SelectedLink = 0;
+    }
+
     ed::Resume();
 
     if (wantAutoLayout) {
         AutoLayout();
     }
 
+    if (ed::BeginCreate())
+    {
+        ed::PinId InputPinID, OutputPinID;
+        if (ed::QueryNewLink(&InputPinID, &OutputPinID))
+        {
+            if (InputPinID && OutputPinID) // both are valid, let's accept link
+            {
+                // ed::AcceptNewItem() return true when user release mouse button.
+                if (ed::AcceptNewItem())
+                {
+
+                    int NodeIndex = 0;
+                    int ParameterIndex = 0;
+
+                    for (AINBImGuiNode& GuiNode : this->m_GuiNodes)
+                    {
+                        int Index = 0;
+                        for (auto const& [Key, Val] : GuiNode.IdxToID[1])
+                        {
+                            if (Val.Get() == InputPinID.Get())
+                            {
+                                std::cout << "Output Node: " << GuiNode.GetNode().Name << std::endl;
+                                NodeIndex = GuiNode.GetNode().NodeIndex;
+                                ParameterIndex = Index;
+                                goto FoundOutput;
+                            }
+                            Index++;
+                        }
+                    }
+
+                FoundOutput:
+
+                    for (AINBImGuiNode& GuiNode : this->m_GuiNodes)
+                    {
+                        for (auto const& [Key, Val] : GuiNode.IdxToID[0])
+                        {
+                            if (Val.Get() == OutputPinID.Get())
+                            {
+                                std::cout << "Input Node: " << GuiNode.GetNode().Name << std::endl;
+                                int Index = 0;
+                                for (int Type = 0; Type < AINBFile::ValueTypeCount; Type++)
+                                {
+                                    for (AINBFile::InputEntry& Param : GuiNode.GetNode().InputParameters[Type])
+                                    {
+                                        std::cout << Index << ", " << Key << std::endl;
+                                        if (Index == Key)
+                                        {
+                                            std::cout << "SET\n";
+                                            Param.NodeIndex = NodeIndex;
+                                            Param.ParameterIndex = ParameterIndex;
+                                            GuiNode.UpdateLink(Param, Key);
+                                            goto FoundInput;
+                                        }
+                                        Index++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                FoundInput:;
+                }
+            }
+        }
+    }
+    ed::EndCreate(); // Wraps up object creation action handling.
+
     ed::End();
     ed::SetCurrentEditor(nullptr);
+}
+
+void AINBEditor::DrawProperties()
+{
+    if (this->m_SelectedLink.Get() != 0)
+    {
+        ImGui::Text(("Link: " + std::to_string(this->m_SelectedLink.Get())).c_str());
+        ImGui::SameLine();
+        if (ImGui::Button("Delete"))
+        {
+            for (AINBImGuiNode& GuiNode : this->m_GuiNodes)
+            {
+                for (AINBImGuiNode::ParamLink& Link : GuiNode.ParamLinks)
+                {
+                    if (Link.LinkID.Get() == this->m_SelectedLink.Get())
+                    {
+                        this->m_SelectedLink = 0;
+                        Link.InputParam->NodeIndex = -1;
+                        Link.InputParam->ParameterIndex = -1;
+                        GuiNode.UpdateLink(*Link.InputParam, Link.InputParamIndex);
+                        goto FoundOutput;
+                    }
+                }
+            }
+        FoundOutput:
+            return;
+        }
+    }
+
+    if (this->m_SelectedNodeIdx != -1)
+    {
+        ImGui::Text(("Node: " + std::to_string(this->m_SelectedNodeIdx)).c_str());
+        ImGui::SameLine();
+        if (ImGui::Button("Delete"))
+        {
+            this->m_File.Nodes.erase(this->m_File.Nodes.begin() + this->m_SelectedNodeIdx);
+            this->m_GuiNodes.erase(this->m_GuiNodes.begin() + this->m_SelectedNodeIdx);
+
+            for (AINBImGuiNode& Node : this->m_GuiNodes)
+            {
+                for (AINBImGuiNode::ParamLink& Link : Node.ParamLinks)
+                {
+                    if (Link.InputNodeIdx == this->m_SelectedNodeIdx)
+                    {
+                        Link.InputParam->NodeIndex = -1;
+                        Link.InputParam->ParameterIndex = -1;
+                        Node.UpdateLink(*Link.InputParam, Link.InputParamIndex);
+                    }
+                }
+            }
+        }
+    }
 }
 
 void AINBEditor::Initialize()

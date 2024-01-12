@@ -27,7 +27,7 @@ void PinIcons::DrawIcon(ImVec2& Size) {
 
 uint32_t AINBImGuiNode::NextID = 0;
 
-AINBImGuiNode::AINBImGuiNode(AINBFile::Node& Node) : Node(Node) {
+AINBImGuiNode::AINBImGuiNode(AINBFile::Node& Node) : Node(&Node) {
     PreparePinIDs();
     CalculateFrameWidth();
 }
@@ -43,7 +43,7 @@ void AINBImGuiNode::PreparePinIDs()
 
     for (int Type = 0; Type < AINBFile::ValueTypeCount; Type++)
     {
-        for (AINBFile::InputEntry& Param : Node.InputParameters[Type])
+        for (AINBFile::InputEntry& Param : Node->InputParameters[Type])
         {
             ed::PinId PinID = MakePinID();
             IdxToID[0][InputIndex] = PinID;
@@ -57,7 +57,8 @@ void AINBImGuiNode::PreparePinIDs()
                     .GenNodePinID = MakePinID(),
                     .OutputPinID = PinID,
                     .LinkID = MakeLinkID(),
-                    .InputParam = Param
+                    .InputParam = &Param,
+                    .InputParamIndex = InputIndex - 1
                     });
             }
             else
@@ -67,11 +68,13 @@ void AINBImGuiNode::PreparePinIDs()
                     .InputType = (AINBFile::ValueType)Param.ValueType,
                     .InputNodeIdx = Param.NodeIndex,
                     .InputParameterIdx = Param.ParameterIndex,
-                    .InputPinID = PinID
+                    .InputPinID = PinID,
+                    .InputParam = &Param,
+                    .InputParamIndex = InputIndex - 1
                     });
             }
         }
-        for (AINBFile::OutputEntry& Param : Node.OutputParameters[Type])
+        for (AINBFile::OutputEntry& Param : Node->OutputParameters[Type])
         {
             ed::PinId PinID = MakePinID();
             IdxToID[1][OutputIndex] = PinID;
@@ -79,7 +82,7 @@ void AINBImGuiNode::PreparePinIDs()
             OutputPins.push_back(OutputIndex);
             OutputIndex++;
         }
-        for (AINBFile::ImmediateParameter& Param : Node.ImmediateParameters[Type])
+        for (AINBFile::ImmediateParameter& Param : Node->ImmediateParameters[Type])
         {
             ed::PinId PinID = MakePinID();
             IdxToID[2][ImmediateIndex] = PinID;
@@ -95,24 +98,24 @@ void AINBImGuiNode::PreparePinIDs()
     for (int i = 0; i < AINBFile::ValueTypeCount; i++)
     {
         OutputIdxOffset[i] = Offset;
-        Offset += Node.OutputParameters[i].size();
+        Offset += Node->OutputParameters[i].size();
     }
 
 
     // Extra pins / Flow links
     for (int i = 0; i < AINBFile::LinkedNodeTypeCount; i++)
     {
-        for (const AINBFile::LinkedNodeInfo& NL : Node.LinkedNodes[i]) {
+        for (AINBFile::LinkedNodeInfo& NL : Node->LinkedNodes[i]) {
             if (NL.Type != AINBFile::LinkedNodeMapping::StandardLink)
             {
-                if (Node.Type == (uint16_t)AINBFile::NodeTypes::UserDefined || NL.Type != AINBFile::LinkedNodeMapping::ResidentUpdateLink)
+                if (Node->Type == (uint16_t)AINBFile::NodeTypes::UserDefined || NL.Type != AINBFile::LinkedNodeMapping::ResidentUpdateLink)
                 {
                     continue;
                 }
             }
             ed::PinId pinID = MakePinID();
             ExtraPins.push_back(pinID);
-            switch (Node.Type)
+            switch (Node->Type)
             {
             case (uint16_t)AINBFile::NodeTypes::Element_Simultaneous:
             case (uint16_t)AINBFile::NodeTypes::Element_Fork:
@@ -128,7 +131,7 @@ void AINBImGuiNode::PreparePinIDs()
             }
         }
     }
-    if (Node.Type == (uint16_t)AINBFile::NodeTypes::Element_Simultaneous)
+    if (Node->Type == (uint16_t)AINBFile::NodeTypes::Element_Simultaneous)
     {
         ExtraPins.resize(1);
     }
@@ -137,25 +140,25 @@ void AINBImGuiNode::PreparePinIDs()
 void AINBImGuiNode::CalculateFrameWidth()
 {
     int ItemSpacingX = ImGui::GetStyle().ItemSpacing.x;
-    FrameWidth = 8 * 2 + ImGui::CalcTextSize(Node.Name.c_str()).x + IconSize.x + ItemSpacingX;
+    FrameWidth = 8 * 2 + ImGui::CalcTextSize(Node->Name.c_str()).x + IconSize.x + ItemSpacingX;
 
     for (int i = 0; i < AINBFile::ValueTypeCount; i++)
     {
-        for (AINBFile::InputEntry& Param : Node.InputParameters[i])
+        for (AINBFile::InputEntry& Param : Node->InputParameters[i])
         {
             int Size = 8 * 2; // Frame Padding
             Size += ImGui::CalcTextSize(Param.Name.c_str()).x;
             Size += 2 * ItemSpacingX + IconSize.x;
             FrameWidth = std::max(FrameWidth, Size);
         }
-        for (AINBFile::OutputEntry& Param : Node.OutputParameters[i])
+        for (AINBFile::OutputEntry& Param : Node->OutputParameters[i])
         {
             int Size = 8 * 2; // Frame Padding
             Size += ImGui::CalcTextSize(Param.Name.c_str()).x;
             Size += 2 * ItemSpacingX + IconSize.x;
             FrameWidth = std::max(FrameWidth, Size);
         }
-        for (AINBFile::ImmediateParameter& Param : Node.ImmediateParameters[i])
+        for (AINBFile::ImmediateParameter& Param : Node->ImmediateParameters[i])
         {
             int Size = 8 * 2; // Frame Padding
             Size += ImGui::CalcTextSize(Param.Name.c_str()).x;
@@ -232,7 +235,7 @@ void AINBImGuiNode::DrawPinIcon(ed::PinId ID, bool IsOutput)
     ed::PopStyleVar(2);
 }
 
-void AINBImGuiNode::DrawPinTextCommon(const std::string& Name)
+void AINBImGuiNode::DrawPinTextCommon(std::string& Name)
 {
     ImGui::TextUnformatted(Name.c_str());
 }
@@ -283,7 +286,7 @@ void AINBImGuiNode::DrawImmediatePin(AINBFile::ImmediateParameter& Param, ed::Pi
 }
 
 
-void AINBImGuiNode::DrawOutputPin(const AINBFile::OutputEntry& Param, ed::PinId id)
+void AINBImGuiNode::DrawOutputPin(AINBFile::OutputEntry& Param, ed::PinId id)
 {
     PrepareTextAlignRight(Param.Name, IconSize.x + ImGui::GetStyle().ItemSpacing.x);
     DrawPinTextCommon(Param.Name);
@@ -291,7 +294,7 @@ void AINBImGuiNode::DrawOutputPin(const AINBFile::OutputEntry& Param, ed::PinId 
     DrawPinIcon(id, true);
 }
 
-std::string MakeTitle(const AINBFile::Node& Node, const AINBFile::LinkedNodeInfo& Info, int idx, int count)
+std::string MakeTitle(AINBFile::Node& Node, AINBFile::LinkedNodeInfo& Info, int idx, int count)
 {
     switch (Node.Type)
     {
@@ -320,16 +323,66 @@ void AINBImGuiNode::DrawExtraPins()
 {
     for (size_t i = 0; i < FlowLinks.size(); i++)
     {
-        const FlowLink& FlowLink = FlowLinks[i];
-        std::string title = MakeTitle(Node, FlowLink.NodeLink, i, FlowLinks.size());
+        FlowLink& FlowLink = FlowLinks[i];
+        std::string title = MakeTitle(*Node, FlowLink.NodeLink, i, FlowLinks.size());
         PrepareTextAlignRight(title, IconSize.x + ImGui::GetStyle().ItemSpacing.x);
         ImGui::TextUnformatted(title.c_str());
         ImGui::SameLine();
         DrawPinIcon(ExtraPins[i], true);
-        if (Node.Type == (uint16_t)AINBFile::NodeTypes::Element_Simultaneous || Node.Type == (uint16_t)AINBFile::NodeTypes::Element_Fork)
+        if (Node->Type == (uint16_t)AINBFile::NodeTypes::Element_Simultaneous || Node->Type == (uint16_t)AINBFile::NodeTypes::Element_Fork)
         {
             break; // Simultaneous and Fork only have one pin
         }
+    }
+}
+
+void AINBImGuiNode::UpdateLink(AINBFile::InputEntry& Param, int Index)
+{
+    ed::LinkId ID;
+    std::vector<AINBImGuiNode::ParamLink>::iterator IterParam;
+    std::vector<AINBImGuiNode::NonNodeInput>::iterator IterValue;
+    for (IterParam = this->ParamLinks.begin(); IterParam != this->ParamLinks.end(); ) {
+        if (IterParam->InputPinID == IdxToID[0][Index])
+        {
+            ID = IterParam->LinkID;
+            IterParam = this->ParamLinks.erase(IterParam);
+        }
+        else
+            ++IterParam;
+    }
+
+    for (IterValue = this->NonNodeInputs.begin(); IterValue != this->NonNodeInputs.end(); ) {
+        if (NameToPinID[IterValue->InputParam->Name].Get() == NameToPinID[Param.Name].Get())
+        {
+            ID = IterValue->LinkID;
+            IterValue = this->NonNodeInputs.erase(IterValue);
+        }
+        else
+            ++IterValue;
+    }
+
+    if (Param.NodeIndex >= 0)
+    {
+        ParamLinks.push_back(ParamLink{
+            .LinkID = ID,
+            .InputType = (AINBFile::ValueType)Param.ValueType,
+            .InputNodeIdx = Param.NodeIndex,
+            .InputParameterIdx = Param.ParameterIndex,
+            .InputPinID = IdxToID[0][Index],
+            .InputParam = &Param,
+            .InputParamIndex = Index
+        });
+    }
+    else
+    {
+        NonNodeInputs.push_back(NonNodeInput{
+            .GenNodeID = MakeNodeID(),
+            .GenNodePinID = MakePinID(),
+            .OutputPinID = IdxToID[0][Index],
+            .LinkID = ID,
+            .InputParam = &Param,
+            .InputParamIndex = Index
+            });
     }
 }
 
@@ -344,7 +397,7 @@ void AINBImGuiNode::Draw() {
     ed::PopStyleVar(2);
 
     ImGui::SameLine();
-    ImGui::Text("%s", Node.Name.c_str());
+    ImGui::Text("%s", Node->Name.c_str());
 
     HeaderMin = ImGui::GetItemRectMin() - ImVec2(IconSize.x + ImGui::GetStyle().ItemSpacing.x + 8, 8);
     HeaderMax = ImVec2(HeaderMin.x + FrameWidth, ImGui::GetItemRectMax().y + 8);
@@ -357,7 +410,7 @@ void AINBImGuiNode::Draw() {
     int ImmediateIndex = 0;
     for (int Type = 0; Type < AINBFile::ValueTypeCount; Type++)
     {
-        for (AINBFile::InputEntry& Param : Node.InputParameters[Type])
+        for (AINBFile::InputEntry& Param : Node->InputParameters[Type])
         {
             DrawInputPin(Param, IdxToID[0][InputPins[InputIndex]]);
             InputIndex++;
@@ -365,7 +418,7 @@ void AINBImGuiNode::Draw() {
     }
     for (int Type = 0; Type < AINBFile::ValueTypeCount; Type++)
     {
-        for (AINBFile::OutputEntry& Param : Node.OutputParameters[Type])
+        for (AINBFile::OutputEntry& Param : Node->OutputParameters[Type])
         {
             DrawOutputPin(Param, IdxToID[1][OutputPins[OutputIndex]]);
             OutputIndex++;
@@ -373,7 +426,7 @@ void AINBImGuiNode::Draw() {
     }
     for (int Type = 0; Type < AINBFile::ValueTypeCount; Type++)
     {
-        for (AINBFile::ImmediateParameter& Param : Node.ImmediateParameters[Type])
+        for (AINBFile::ImmediateParameter& Param : Node->ImmediateParameters[Type])
         {
             DrawImmediatePin(Param, IdxToID[2][ImmediatePins[ImmediateIndex]]);
             ImmediateIndex++;
@@ -385,12 +438,12 @@ void AINBImGuiNode::Draw() {
 
     if (ImGui::IsItemVisible()) {
         int alpha = ImGui::GetStyle().Alpha;
-        ImColor headerColor = GetNodeHeaderColor(static_cast<AINBFile::NodeTypes>(Node.Type));
+        ImColor headerColor = GetNodeHeaderColor(static_cast<AINBFile::NodeTypes>(Node->Type));
         headerColor.Value.w = alpha;
 
         ImDrawList* drawList = ed::GetNodeBackgroundDrawList(NodeID);
 
-        const auto borderWidth = ed::GetStyle().NodeBorderWidth;
+        auto borderWidth = ed::GetStyle().NodeBorderWidth;
 
         HeaderMin.x += borderWidth;
         HeaderMin.y += borderWidth;
@@ -409,8 +462,8 @@ void AINBImGuiNode::Draw() {
 
 void AINBImGuiNode::DrawLinks(std::vector<AINBImGuiNode>& nodes) {
     // Draw inputs not connected to a node
-    for (const NonNodeInput& input : NonNodeInputs) {
-        const AINBFile::InputEntry& inputParam = input.InputParam;
+    for (NonNodeInput& input : NonNodeInputs) {
+        AINBFile::InputEntry& inputParam = *input.InputParam;
         ed::PushStyleColor(ed::StyleColor_NodeBg, ImColor(32, 117, 21, 192));
         ed::BeginNode(input.GenNodeID);
         std::string titleStr = inputParam.Name;
@@ -438,38 +491,38 @@ void AINBImGuiNode::DrawLinks(std::vector<AINBImGuiNode>& nodes) {
     }
 
     // Draw flow links
-    for (const FlowLink& flowLink : FlowLinks) {
+    for (FlowLink& flowLink : FlowLinks) {
         ed::Link(flowLink.LinkID, flowLink.FlowFromPinID, nodes[flowLink.NodeLink.NodeIndex].FlowPinID, ImColor(255, 255, 255));
     }
 
     // Draw node inputs
-    for (const ParamLink& paramLink : ParamLinks) {
+    for (ParamLink& paramLink : ParamLinks) {
         if (paramLink.InputNodeIdx < 0) {
             // TODO: Multi-links
             continue;
         }
 
-        const AINBImGuiNode& inputNode = nodes[paramLink.InputNodeIdx];
+        AINBImGuiNode& inputNode = nodes[paramLink.InputNodeIdx];
         ed::PinId outPin = inputNode.IdxToID[1].at(inputNode.OutputPins[inputNode.OutputIdxOffset[static_cast<int>(paramLink.InputType)] + paramLink.InputParameterIdx]);
         ed::Link(paramLink.LinkID, outPin, paramLink.InputPinID, ImColor(140, 140, 40));
     }
 }
 
-AINBImGuiNode::AuxInfo AINBImGuiNode::GetAuxInfo() const {
+AINBImGuiNode::AuxInfo AINBImGuiNode::GetAuxInfo() {
     AuxInfo auxInfo;
-    auxInfo.NodeIdx = Node.NodeIndex;
+    auxInfo.NodeIdx = Node->NodeIndex;
     auxInfo.Pos = ed::GetNodePosition(NodeID);
-    for (const NonNodeInput& input : NonNodeInputs) {
-        auxInfo.ExtraNodePos[input.InputParam.Name] = ed::GetNodePosition(input.GenNodeID);
+    for (NonNodeInput& input : NonNodeInputs) {
+        auxInfo.ExtraNodePos[input.InputParam->Name] = ed::GetNodePosition(input.GenNodeID);
     }
     return auxInfo;
 }
 
-void AINBImGuiNode::LoadAuxInfo(const AuxInfo& auxInfo) {
+void AINBImGuiNode::LoadAuxInfo(AuxInfo& auxInfo) {
     ed::SetNodePosition(NodeID, auxInfo.Pos);
     for (NonNodeInput& input : NonNodeInputs) {
-        if (auxInfo.ExtraNodePos.contains(input.InputParam.Name)) {
-            ed::SetNodePosition(input.GenNodeID, auxInfo.ExtraNodePos.at(input.InputParam.Name));
+        if (auxInfo.ExtraNodePos.contains(input.InputParam->Name)) {
+            ed::SetNodePosition(input.GenNodeID, auxInfo.ExtraNodePos.at(input.InputParam->Name));
         }
     }
 }

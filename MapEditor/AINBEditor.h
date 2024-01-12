@@ -17,6 +17,7 @@ public:
 
 	void LoadAINB(std::string Path);
 	void DrawNodeEditor();
+	void DrawProperties();
 	void Initialize();
 	void Destroy();
 private:
@@ -25,6 +26,7 @@ private:
 	ed::NodeId m_RightClickedNode = 0;
 	size_t m_SelectedNodeIdx = -1;
 	std::string m_SelectedCommand = "";
+	ed::LinkId m_SelectedLink;
 	std::unordered_map<int, AINBImGuiNode::AuxInfo> m_NewAuxInfos;
 
 	void AutoLayout();

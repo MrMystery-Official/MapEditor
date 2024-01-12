@@ -24,7 +24,8 @@ public:
         ed::PinId GenNodePinID;
         ed::PinId OutputPinID;
         ed::LinkId LinkID;
-        AINBFile::InputEntry& InputParam;
+        AINBFile::InputEntry* InputParam = nullptr;
+        int InputParamIndex;
     };
     struct FlowLink {
         ed::LinkId LinkID;
@@ -37,6 +38,8 @@ public:
         int InputNodeIdx;
         int InputParameterIdx;
         ed::PinId InputPinID;
+        AINBFile::InputEntry* InputParam = nullptr;
+        int InputParamIndex;
     };
     // Information for node drawing
     struct AuxInfo {
@@ -45,20 +48,29 @@ public:
         std::unordered_map<std::string, ImVec2> ExtraNodePos;
     };
 
+    std::vector<ed::PinId> ExtraPins;
+    std::vector<NonNodeInput> NonNodeInputs;
+    std::vector<FlowLink> FlowLinks;
+    std::vector<ParamLink> ParamLinks;
+
+    std::unordered_map<std::string, ed::PinId> NameToPinID;
+    std::unordered_map<int, ed::PinId> IdxToID[3];
+
     AINBImGuiNode(AINBFile::Node& Node);
 
     void DrawLinks(std::vector<AINBImGuiNode>& Nodes);
     void Draw();
+    void UpdateLink(AINBFile::InputEntry& Param, int Index);
 
-    ed::NodeId GetNodeID() const { return NodeID; }
-    const AINBFile::Node& GetNode() const { return Node; }
-    const std::vector<NonNodeInput>& GetNonNodeInputs() const { return NonNodeInputs; }
+    ed::NodeId GetNodeID() { return NodeID; }
+    AINBFile::Node& GetNode() { return *Node; }
+    std::vector<NonNodeInput>& GetNonNodeInputs() { return NonNodeInputs; }
 
-    AuxInfo GetAuxInfo() const;
-    void LoadAuxInfo(const AuxInfo& auxInfo);
+    AuxInfo GetAuxInfo();
+    void LoadAuxInfo(AuxInfo& auxInfo);
 
 private:
-    AINBFile::Node& Node;
+    AINBFile::Node* Node = nullptr;
 
     int FrameWidth;
     ImVec2 HeaderMin;
@@ -69,18 +81,11 @@ private:
     std::vector<int> InputPins;
     std::vector<int> OutputPins;
     std::vector<int> ImmediatePins;
-    std::vector<ed::PinId> ExtraPins;
-    std::vector<NonNodeInput> NonNodeInputs;
-    std::vector<FlowLink> FlowLinks;
-    std::vector<ParamLink> ParamLinks;
 
     int OutputIdxOffset[AINBFile::ValueTypeCount];
 
-    std::unordered_map<std::string, ed::PinId> NameToPinID;
-    std::unordered_map<int, ed::PinId> IdxToID[3];
-
     ImVec2 IconSize = ImVec2(10, 10);
-    const int MinImmTextboxWidth = 150;
+    int MinImmTextboxWidth = 150;
 
     static uint32_t NextID;
     ed::NodeId static MakeNodeID() { return ++NextID; }
@@ -88,10 +93,10 @@ private:
     ed::LinkId static MakeLinkID() { return ++NextID; }
 
     void DrawPinIcon(ed::PinId ID, bool IsOutput);
-    void DrawPinTextCommon(const std::string& Name);
+    void DrawPinTextCommon(std::string& Name);
     void DrawInputPin(AINBFile::InputEntry& Param, ed::PinId ID);
     void DrawImmediatePin(AINBFile::ImmediateParameter& Param, ed::PinId ID);
-    void DrawOutputPin(const AINBFile::OutputEntry& Param, ed::PinId ID);
+    void DrawOutputPin(AINBFile::OutputEntry& Param, ed::PinId ID);
     void DrawExtraPins();
 
     void PreparePinIDs();
