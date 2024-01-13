@@ -257,25 +257,6 @@ void AINBEditor::DrawNodeEditor()
 
     ed::Suspend();
 
-    if (ed::ShowNodeContextMenu(&this->m_RightClickedNode)) {
-        ImGui::OpenPopup("Node Actions");
-    }
-
-    if (ImGui::BeginPopup("Node Actions")) {
-        if (ImGui::MenuItem("Copy default value")) {
-            for (AINBImGuiNode& guiNode : this->m_GuiNodes) {
-                for (AINBImGuiNode::NonNodeInput& input : guiNode.GetNonNodeInputs()) {
-                    if (input.GenNodeID == this->m_RightClickedNode) {
-                        ImGui::SetClipboardText(AINBFile::ValueToString(input.InputParam->Value).c_str());
-                        goto found;
-                    }
-                }
-            }
-        found:;
-        }
-        ImGui::EndPopup();
-    }
-
     ed::NodeId SelectedNodeID;
     if (ed::GetSelectedNodes(&SelectedNodeID, 1) > 0) {
         for (AINBImGuiNode& guiNode : this->m_GuiNodes) {

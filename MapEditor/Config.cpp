@@ -3,7 +3,7 @@
 
 BymlFile Config::StaticActorsByml;
 BymlFile Config::DynamicActorsByml;
-std::string Config::Key;
+std::string Config::Key = "";
 uint8_t Config::MapType;
 std::string Config::WorkingDir;
 std::string Config::BancPrefix;

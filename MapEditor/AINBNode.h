@@ -19,14 +19,6 @@ namespace PinIcons {
 
 class AINBImGuiNode {
 public:
-    struct NonNodeInput {
-        ed::NodeId GenNodeID;
-        ed::PinId GenNodePinID;
-        ed::PinId OutputPinID;
-        ed::LinkId LinkID;
-        AINBFile::InputEntry* InputParam = nullptr;
-        int InputParamIndex;
-    };
     struct FlowLink {
         ed::LinkId LinkID;
         ed::PinId FlowFromPinID;
@@ -51,7 +43,6 @@ public:
     static uint32_t NextID;
 
     std::vector<ed::PinId> ExtraPins;
-    std::vector<NonNodeInput> NonNodeInputs;
     std::vector<FlowLink> FlowLinks;
     std::vector<ParamLink> ParamLinks;
 
@@ -66,7 +57,6 @@ public:
 
     ed::NodeId GetNodeID() { return NodeID; }
     AINBFile::Node& GetNode() { return *Node; }
-    std::vector<NonNodeInput>& GetNonNodeInputs() { return NonNodeInputs; }
 
     AuxInfo GetAuxInfo();
     void LoadAuxInfo(AuxInfo& auxInfo);
@@ -96,7 +86,6 @@ private:
     void DrawPinIcon(ed::PinId ID, bool IsOutput);
     void DrawPinTextCommon(std::string& Name);
     void DrawInputPin(AINBFile::InputEntry& Param, ed::PinId ID);
-    void DrawImmediatePin(AINBFile::ImmediateParameter& Param, ed::PinId ID);
     void DrawOutputPin(AINBFile::OutputEntry& Param, ed::PinId ID);
     void DrawExtraPins();
 
