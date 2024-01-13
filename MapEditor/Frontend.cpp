@@ -1145,13 +1145,13 @@ void Frontend::Render() {
 		{
 			ImGui::Text("Please enter the map type and identifier:");
 			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-			const char* TypeDropdownItems[] = { "SmallDungeon", "MainField", "MinusField"};
+			const char* TypeDropdownItems[] = { "SkyIslands", "MainField", "MinusField", "SmallDungeon" };
 			ImGui::Combo("Type", reinterpret_cast<int*>(&LoadMapPopUp.IntData), TypeDropdownItems, IM_ARRAYSIZE(TypeDropdownItems));
 			std::string ExampleText;
 			switch (LoadMapPopUp.IntData)
 			{
 			case 0:
-				ExampleText = "Dungeon ID (e.g. 001)";
+				ExampleText = "SkyIsland name (e.g. StartIslandMerge2)";
 				break;
 			case 1:
 				ExampleText = "MainField section (e.g. E-6)";
@@ -1159,12 +1159,16 @@ void Frontend::Render() {
 			case 2:
 				ExampleText = "MinusField section (e.g. E-6)";
 				break;
+			case 3:
+				ExampleText = "Dungeon ID (e.g. 001)";
+				break;
 			}
 			ImGui::InputText(ExampleText.c_str(), &LoadMapPopUp.GetData()[0]);
-			if (ImGui::Button("Load") && LoadMapPopUp.GetData()[0].length() == 3)
+			if (ImGui::Button("Load"))
 			{
 				LoadMapPopUp.IsOpen() = false;
 				Actors->clear();
+				PickedActorId = -1;
 				(*Actors) = MapLoader::LoadMap(LoadMapPopUp.GetData()[0], (MapLoader::Type)LoadMapPopUp.IntData);
 				camera.Position.x = Actors->at(0).GetTranslate().GetX();
 				camera.Position.y = Actors->at(0).GetTranslate().GetY();

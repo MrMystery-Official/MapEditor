@@ -14,9 +14,10 @@ namespace MapLoader
 {
 	enum class Type : uint8_t
 	{
-		SmallDungeon = 0,
+		Sky = 0,
 		MainField = 1,
-		MinusField = 2
+		MinusField = 2,
+		SmallDungeon = 3
 	};
 
 	std::vector<Actor> LoadMap(std::string Key, MapLoader::Type Type);

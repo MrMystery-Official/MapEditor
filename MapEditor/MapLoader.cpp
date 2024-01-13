@@ -386,14 +386,17 @@ std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type)
 	std::string BancPathPrefix = "Banc/";
 	switch (Type)
 	{
-	case MapLoader::Type::SmallDungeon:
-		BancPathPrefix += "SmallDungeon/Dungeon";
+	case MapLoader::Type::Sky:
+		BancPathPrefix += "MainField/Sky/";
 		break;
 	case MapLoader::Type::MainField:
 		BancPathPrefix += "MainField/";
 		break;
 	case MapLoader::Type::MinusField:
 		BancPathPrefix += "MinusField/";
+		break;
+	case MapLoader::Type::SmallDungeon:
+		BancPathPrefix += "SmallDungeon/Dungeon";
 		break;
 	default:
 		std::cerr << "Invalid map type! (Don't know how that is even possible)\n";
