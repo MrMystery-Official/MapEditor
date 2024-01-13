@@ -948,6 +948,12 @@ void Frontend::Render() {
 				camera.Position.y = SelectedActor.GetTranslate().GetY();
 				camera.Position.z = SelectedActor.GetTranslate().GetZ();
 			}
+			if (ImGui::Button("Actor to camera"))
+			{
+				SelectedActor.GetTranslate().SetX(camera.Position.x);
+				SelectedActor.GetTranslate().SetY(camera.Position.y);
+				SelectedActor.GetTranslate().SetZ(camera.Position.z);
+			}
 			ImGui::Checkbox("Bakeable", &SelectedActor.IsBakeable());
 			ImGui::Checkbox("Physics Stable", &SelectedActor.IsPhysicsStable());
 			ImGui::Checkbox("Force Active", &SelectedActor.IsForceActive());
