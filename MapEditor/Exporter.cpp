@@ -222,6 +222,15 @@ void CreateExportOnlyFiles(std::vector<Actor>* Actors, std::string Path)
 				}
 			}
 		}
+		for (const auto& Entry : std::filesystem::directory_iterator(Config::GetWorkingDirFile("Save/Logic")))
+		{
+			if (Entry.is_regular_file())
+			{
+				std::ifstream File(Entry.path(), std::ifstream::ate | std::ifstream::binary);
+				ResTable.SetFileSize("Logic/" + Entry.path().filename().string(), File.tellg() * 2);
+				File.close();
+			}
+		}
 		Util::CreateDir(Path + "/System");
 		Util::CreateDir(Path + "/System/Resource");
 		ZStdFile::Compress(ResTable.ToBinary(), ZStdFile::Dictionary::None).WriteToFile(Path + "/System/Resource/ResourceSizeTable.Product." + Config::GetInternalGameVersion() + ".rsizetable.zs");
