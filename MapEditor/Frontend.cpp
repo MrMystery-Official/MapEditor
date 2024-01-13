@@ -40,7 +40,6 @@ struct RenderSettingsStruct
 RenderSettingsStruct RenderSettings;
 
 bool LoadedEConfig = false;
-bool LoadedDungeon = true;
 
 ImGuiPopUp DynamicPopUp("Add dynamic data", 400, 100, 2);
 ImGuiPopUp PhivePlacementPopUp("Add Phive placement", 400, 100, 2);
@@ -470,7 +469,7 @@ void Frontend::Render() {
 
 	if (ImGui::Button("Load map"))
 	{
-		LoadedDungeon = false;
+		LoadMapPopUp.IsOpen() = true;
 	}
 
 	if (ImGui::Button("Add Actor"))
@@ -1139,22 +1138,32 @@ void Frontend::Render() {
 		SetPathsPopUp.End();
 	}
 
-	if (LoadedEConfig && !LoadedDungeon)
+	if (LoadMapPopUp.IsOpen())
 	{
-		if (!LoadMapPopUp.IsOpen()) LoadMapPopUp.IsOpen() = true;
-
 		LoadMapPopUp.Begin();
 		if (LoadMapPopUp.BeginPopupModal())
 		{
 			ImGui::Text("Please enter the map type and identifier:");
 			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-			const char* TypeDropdownItems[] = { "SmallDungeon", "MainField" };
+			const char* TypeDropdownItems[] = { "SmallDungeon", "MainField", "MinusField"};
 			ImGui::Combo("Type", reinterpret_cast<int*>(&LoadMapPopUp.IntData), TypeDropdownItems, IM_ARRAYSIZE(TypeDropdownItems));
-			ImGui::InputText(LoadMapPopUp.IntData == 0 ? ("Dungeon ID (e.g. 001)") : ("MainField section (e.g. E-6)"), &LoadMapPopUp.GetData()[0]);
+			std::string ExampleText;
+			switch (LoadMapPopUp.IntData)
+			{
+			case 0:
+				ExampleText = "Dungeon ID (e.g. 001)";
+				break;
+			case 1:
+				ExampleText = "MainField section (e.g. E-6)";
+				break;
+			case 2:
+				ExampleText = "MinusField section (e.g. E-6)";
+				break;
+			}
+			ImGui::InputText(ExampleText.c_str(), &LoadMapPopUp.GetData()[0]);
 			if (ImGui::Button("Load") && LoadMapPopUp.GetData()[0].length() == 3)
 			{
 				LoadMapPopUp.IsOpen() = false;
-				LoadedDungeon = true;
 				Actors->clear();
 				(*Actors) = MapLoader::LoadMap(LoadMapPopUp.GetData()[0], (MapLoader::Type)LoadMapPopUp.IntData);
 				camera.Position.x = Actors->at(0).GetTranslate().GetX();
@@ -1162,6 +1171,11 @@ void Frontend::Render() {
 				camera.Position.z = Actors->at(0).GetTranslate().GetZ();
 			}
 			ImGui::PopItemWidth();
+			ImGui::SameLine();
+			if (ImGui::Button("Return"))
+			{
+				LoadMapPopUp.Reset();
+			}
 		}
 		LoadMapPopUp.End();
 	}

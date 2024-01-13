@@ -10,7 +10,6 @@
 
 ImGuiPopUp AddAINBNodePopUp("Add node", 500, 210, 1);
 
-
 void AINBEditor::LoadAINB(std::string Path) {
     if (!this->m_File.Loaded)
     {

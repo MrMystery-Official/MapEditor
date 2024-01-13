@@ -31,7 +31,8 @@ int main(int, char**)
     Util::CreateDir(Config::WorkingDir + "/Save/Banc/SmallDungeon/StartPos");
     Util::CreateDir(Config::WorkingDir + "/Save/Banc/MainField");
     Util::CreateDir(Config::WorkingDir + "/Save/Banc/MainField/Merged");
-    Util::CreateDir(Config::WorkingDir + "/Save/Banc/MainField/StartPos");
+    Util::CreateDir(Config::WorkingDir + "/Save/Banc/MinusField");
+    Util::CreateDir(Config::WorkingDir + "/Save/Banc/MinusField/Merged");
 
     bool FoundEConf = LoadEditorConfig();
 

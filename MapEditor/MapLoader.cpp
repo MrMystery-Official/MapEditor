@@ -392,6 +392,9 @@ std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type)
 	case MapLoader::Type::MainField:
 		BancPathPrefix += "MainField/";
 		break;
+	case MapLoader::Type::MinusField:
+		BancPathPrefix += "MinusField/";
+		break;
 	default:
 		std::cerr << "Invalid map type! (Don't know how that is even possible)\n";
 		return std::vector<Actor>(0);
