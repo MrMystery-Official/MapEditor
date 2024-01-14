@@ -18,7 +18,8 @@ namespace MapLoader
 		MainField = 1,
 		MinusField = 2,
 		SmallDungeon = 3,
-		NormalStage = 4
+		LargeDungeon = 4,
+		NormalStage = 5
 	};
 
 	std::vector<Actor> LoadMap(std::string Key, MapLoader::Type Type);

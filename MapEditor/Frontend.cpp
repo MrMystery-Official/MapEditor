@@ -35,6 +35,7 @@ struct RenderSettingsStruct
 	bool Area = true;
 	bool Visible = true;
 	bool FarActors = true;
+	bool LOD = true;
 };
 
 RenderSettingsStruct RenderSettings;
@@ -363,7 +364,7 @@ void CheckActorSelection(ImVec2 SceneWindowSize, ImVec2 MousePos)
 
 			BfresFile::LOD* LODModel = &Actor.GetModel()->GetModels()[0].LODs[0];
 
-			if (DistanceToCamera >= 10000) //Max distance is 100, 10000 = 100 to the power of 2
+			if (DistanceToCamera >= 10000 && RenderSettings.LOD) //Max distance is 100, 10000 = 100 to the power of 2
 			{
 				LODModel = &Actor.GetModel()->GetModels()[0].LODs[Actor.GetModel()->GetModels()[0].LODs.size() - 1];
 			}
@@ -794,6 +795,7 @@ void Frontend::Render() {
 	ImGui::Checkbox("Invisible actors", &RenderSettings.Invisible);
 	ImGui::Checkbox("Areas", &RenderSettings.Area);
 	ImGui::Checkbox("Far actors", &RenderSettings.FarActors);
+	ImGui::Checkbox("Level of detail", &RenderSettings.LOD);
 
 	ImGui::End();
 
@@ -1158,7 +1160,7 @@ void Frontend::Render() {
 		{
 			ImGui::Text("Please enter the map type and identifier:");
 			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-			const char* TypeDropdownItems[] = { "SkyIslands", "MainField", "MinusField", "SmallDungeon", "NormalStage" };
+			const char* TypeDropdownItems[] = { "SkyIslands", "MainField", "MinusField", "SmallDungeon", "LargeDungeon", "NormalStage" };
 			ImGui::Combo("Type", reinterpret_cast<int*>(&LoadMapPopUp.IntData), TypeDropdownItems, IM_ARRAYSIZE(TypeDropdownItems));
 			std::string ExampleText;
 			switch (LoadMapPopUp.IntData)
@@ -1176,6 +1178,9 @@ void Frontend::Render() {
 				ExampleText = "Dungeon ID (e.g. 001)";
 				break;
 			case 4:
+				ExampleText = "Dungeon name (e.g. Thunder)";
+				break;
+			case 5:
 				ExampleText = "NormalStage name (e.g. TitleScene)";
 				break;
 			}
@@ -1483,7 +1488,7 @@ void Frontend::Render() {
 
 		BfresFile::LOD* LODModel = &Actor.GetModel()->GetModels()[0].LODs[0];
 
-		if (DistanceToCamera >= 10000) //Max distance is 100, 10000 = 100 to the power of 2
+		if (DistanceToCamera >= 10000 && RenderSettings.LOD) //Max distance is 100, 10000 = 100 to the power of 2
 		{
 			LODModel = &Actor.GetModel()->GetModels()[0].LODs[Actor.GetModel()->GetModels()[0].LODs.size() - 1];
 		}

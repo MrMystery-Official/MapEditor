@@ -398,6 +398,9 @@ std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type)
 	case MapLoader::Type::SmallDungeon:
 		BancPathPrefix += "SmallDungeon/Dungeon";
 		break;
+	case MapLoader::Type::LargeDungeon:
+		BancPathPrefix += "LargeDungeon/LargeDungeon";
+		break;
 	case MapLoader::Type::NormalStage:
 		BancPathPrefix += "NormalStage/";
 		break;

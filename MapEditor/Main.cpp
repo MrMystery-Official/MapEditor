@@ -29,6 +29,9 @@ int main(int, char**)
     Util::CreateDir(Config::WorkingDir + "/Save/Banc/SmallDungeon");
     Util::CreateDir(Config::WorkingDir + "/Save/Banc/SmallDungeon/Merged");
     Util::CreateDir(Config::WorkingDir + "/Save/Banc/SmallDungeon/StartPos");
+    Util::CreateDir(Config::WorkingDir + "/Save/Banc/LargeDungeon");
+    Util::CreateDir(Config::WorkingDir + "/Save/Banc/LargeDungeon/Merged");
+    Util::CreateDir(Config::WorkingDir + "/Save/Banc/LargeDungeon/StartPos");
     Util::CreateDir(Config::WorkingDir + "/Save/Banc/MainField");
     Util::CreateDir(Config::WorkingDir + "/Save/Banc/MainField/Merged");
     Util::CreateDir(Config::WorkingDir + "/Save/Banc/MainField/Sky");
