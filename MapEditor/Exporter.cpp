@@ -570,18 +570,18 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 
 			BymlFile::Node ActorNode(BymlFile::Type::Dictionary);
 
-			if (Actor.GetExtraCreateRadius() != 0)
-			{
-				BymlFile::Node ExtraCreateRadius(BymlFile::Type::Float, "ExtraCreateRadius");
-				ExtraCreateRadius.SetValue<float>(Actor.GetExtraCreateRadius());
-				ActorNode.AddChild(ExtraCreateRadius);
-			}
-
 			if (Actor.IsBakeable())
 			{
 				BymlFile::Node Bakeable(BymlFile::Type::Bool, "Bakeable");
 				Bakeable.SetValue<bool>(true);
 				ActorNode.AddChild(Bakeable);
+			}
+
+			if (Actor.GetExtraCreateRadius() != 0)
+			{
+				BymlFile::Node ExtraCreateRadius(BymlFile::Type::Float, "ExtraCreateRadius");
+				ExtraCreateRadius.SetValue<float>(Actor.GetExtraCreateRadius());
+				ActorNode.AddChild(ExtraCreateRadius);
 			}
 
 			if (!Actor.GetDynamic().DynamicString.empty() || !Actor.GetDynamic().DynamicVector.empty())
