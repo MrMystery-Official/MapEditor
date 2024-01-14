@@ -218,6 +218,104 @@ void AINBNodeDefinitions::Generate()
 		}
 	}
 
+	for (const auto& DirEntry : recursive_directory_iterator(Config::GetRomFSFile("Sequence", false)))
+	{
+		std::cout << DirEntry.path().string() << std::endl;
+		if (DirEntry.is_regular_file())
+		{
+			AINBFile File(DirEntry.path().string());
+			bool NodeFound = false;
+			for (AINBFile::Node Node : File.Nodes)
+			{
+				for (AINBNodeDefinitions::NodeDefinition& Definition : Definitions)
+				{
+					if (Definition.Name == (Node.Name.length() > 0 ? Node.Name : AINBFile::NodeTypeToString((AINBFile::NodeTypes)Node.Type)))
+					{
+						NodeFound = true;
+						for (int i = 0; i < AINBFile::ValueTypeCount; i++)
+						{
+							for (AINBFile::OutputEntry Param : Node.OutputParameters[i])
+							{
+								bool Found = false;
+								for (AINBNodeDefinitions::NodeDefinitionOutputParameter DefParam : Definition.OutputParameters[i])
+								{
+									if (DefParam.Name == Param.Name)
+									{
+										Found = true;
+										break;
+									}
+								}
+								if (Found) continue;
+								Definition.OutputParameters[i].push_back({ Param.Name, Param.Class, Param.SetPointerFlagsBitZero });
+							}
+							for (AINBFile::InputEntry Param : Node.InputParameters[i])
+							{
+								bool Found = false;
+								for (AINBNodeDefinitions::NodeDefinitionInputParameter DefParam : Definition.InputParameters[i])
+								{
+									if (DefParam.Name == Param.Name)
+									{
+										Found = true;
+										break;
+									}
+								}
+								if (Found) continue;
+								Definition.InputParameters[i].push_back({ Param.Name, Param.Class, Param.Value, (AINBFile::ValueType)Param.ValueType });
+							}
+							for (AINBFile::ImmediateParameter Param : Node.ImmediateParameters[i])
+							{
+								bool Found = false;
+								for (AINBNodeDefinitions::NodeDefinitionImmediateParameter DefParam : Definition.ImmediateParameters[i])
+								{
+									if (DefParam.Name == Param.Name)
+									{
+										Found = true;
+										break;
+									}
+								}
+								if (Found) continue;
+								Definition.ImmediateParameters[i].push_back({ Param.Name, Param.Class, (AINBFile::ValueType)Param.ValueType });
+							}
+						}
+						break;
+					}
+				}
+				if (NodeFound) continue;
+				AINBNodeDefinitions::NodeDefinition Definition;
+				Definition.Category = File.Header.FileCategory == "AI" ? AINBNodeDefinitions::NodeDefinitionCategory::AI : (File.Header.FileCategory == "Logic" ? AINBNodeDefinitions::NodeDefinitionCategory::Logic : AINBNodeDefinitions::NodeDefinitionCategory::Sequence);
+				Definition.Name = Node.Name;
+				Definition.NameHash = Node.NameHash;
+				Definition.Type = Node.Type;
+				if (Definition.Name.length() == 0)
+				{
+					Definition.Name = AINBFile::NodeTypeToString((AINBFile::NodeTypes)Definition.Type);
+					std::cout << Definition.Type << std::endl;
+
+					if (Definition.Type == 7)
+					{
+						std::cout << "COND: " << Definition.Name << std::endl;
+					}
+				}
+				for (int i = 0; i < AINBFile::ValueTypeCount; i++)
+				{
+					for (AINBFile::OutputEntry Param : Node.OutputParameters[i])
+					{
+						Definition.OutputParameters[i].push_back({ Param.Name, Param.Class, Param.SetPointerFlagsBitZero });
+					}
+					for (AINBFile::InputEntry Param : Node.InputParameters[i])
+					{
+						Definition.InputParameters[i].push_back({ Param.Name, Param.Class, Param.Value, (AINBFile::ValueType)Param.ValueType });
+					}
+					for (AINBFile::ImmediateParameter Param : Node.ImmediateParameters[i])
+					{
+						Definition.ImmediateParameters[i].push_back({ Param.Name, Param.Class, (AINBFile::ValueType)Param.ValueType });
+					}
+				}
+				Definitions.push_back(Definition);
+			}
+		}
+	}
+
 	BinaryVectorWriter Writer;
 	Writer.WriteBytes("EAINBDEF"); //Magic
 	Writer.WriteByte(0x01); //Version

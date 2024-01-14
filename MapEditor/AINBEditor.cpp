@@ -293,8 +293,8 @@ void AINBEditor::DrawNodeEditor()
                 if (ed::AcceptNewItem())
                 {
 
-                    int NodeIndex = 0;
-                    int ParameterIndex = 0;
+                    int NodeIndex = -1;
+                    int ParameterIndex = -1;
 
                     for (AINBImGuiNode& GuiNode : this->m_GuiNodes)
                     {
@@ -313,34 +313,43 @@ void AINBEditor::DrawNodeEditor()
                     }
 
                 FoundOutput:
-
-                    for (AINBImGuiNode& GuiNode : this->m_GuiNodes)
-                    {
-                        for (auto const& [Key, Val] : GuiNode.IdxToID[0])
+                        for (AINBImGuiNode& GuiNode : this->m_GuiNodes)
                         {
-                            if (Val.Get() == OutputPinID.Get())
+                            if (GuiNode.FlowPinID == OutputPinID)
                             {
-                                std::cout << "Input Node: " << GuiNode.GetNode().Name << std::endl;
-                                int Index = 0;
-                                for (int Type = 0; Type < AINBFile::ValueTypeCount; Type++)
+                                AINBFile::LinkedNodeInfo Info;
+                                Info.Type = AINBFile::LinkedNodeMapping::StandardLink;
+                                Info.NodeIndex = NodeIndex;
+                                GuiNode.GetNode().LinkedNodes[(int)AINBFile::LinkedNodeMapping::StandardLink].push_back(Info);
+                                GuiNode.FlowLinks.push_back(AINBImGuiNode::FlowLink{ AINBImGuiNode::NextID++, AINBImGuiNode::NextID++, &Info });
+                                break;
+                            }
+
+                            for (auto const& [Key, Val] : GuiNode.IdxToID[0])
+                            {
+                                if (Val.Get() == OutputPinID.Get())
                                 {
-                                    for (AINBFile::InputEntry& Param : GuiNode.GetNode().InputParameters[Type])
+                                    std::cout << "Input Node: " << GuiNode.GetNode().Name << std::endl;
+                                    int Index = 0;
+                                    for (int Type = 0; Type < AINBFile::ValueTypeCount; Type++)
                                     {
-                                        std::cout << Index << ", " << Key << std::endl;
-                                        if (Index == Key)
+                                        for (AINBFile::InputEntry& Param : GuiNode.GetNode().InputParameters[Type])
                                         {
-                                            std::cout << "SET\n";
-                                            Param.NodeIndex = NodeIndex;
-                                            Param.ParameterIndex = ParameterIndex;
-                                            GuiNode.UpdateLink(Param, Key);
-                                            goto FoundInput;
+                                            std::cout << Index << ", " << Key << std::endl;
+                                            if (Index == Key)
+                                            {
+                                                std::cout << "SET\n";
+                                                Param.NodeIndex = NodeIndex;
+                                                Param.ParameterIndex = ParameterIndex;
+                                                GuiNode.UpdateLink(Param, Key);
+                                                goto FoundInput;
+                                            }
+                                            Index++;
                                         }
-                                        Index++;
                                     }
                                 }
                             }
                         }
-                    }
                 FoundInput:;
                 }
             }
@@ -368,10 +377,35 @@ void AINBEditor::DrawProperties()
                     {
                         Link.InputParam->NodeIndex = -1;
                         Link.InputParam->ParameterIndex = -1;
-                        this->m_SelectedLink = 0;
                         GuiNode.UpdateLink(*Link.InputParam, Link.InputParamIndex);
                         goto FoundOutput;
                     }
+                }
+                std::vector<AINBImGuiNode::FlowLink>::iterator FlowIter;
+                for (FlowIter = GuiNode.FlowLinks.begin(); FlowIter != GuiNode.FlowLinks.end(); )
+                {
+                    if (FlowIter->LinkID.Get() == this->m_SelectedLink.Get())
+                    {
+                        for (int Type = 0; Type < AINBFile::LinkedNodeTypeCount; Type++)
+                        {
+                            std::vector<AINBFile::LinkedNodeInfo>::iterator InfoIter;
+                            for (InfoIter = GuiNode.GetNode().LinkedNodes[Type].begin(); InfoIter != GuiNode.GetNode().LinkedNodes[Type].end(); )
+                            {
+                                if (&(*InfoIter) == FlowIter->NodeLink)
+                                {
+                                    GuiNode.GetNode().LinkedNodes[Type].erase(InfoIter);
+                                    std::cout << "DEL\n";
+                                    break;
+                                }
+                                else
+                                    InfoIter++;
+                            }
+                        }
+
+                        GuiNode.FlowLinks.erase(FlowIter);
+                    }
+                    else
+                        FlowIter++;
                 }
             }
         FoundOutput:

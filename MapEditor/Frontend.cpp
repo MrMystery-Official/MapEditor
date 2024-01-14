@@ -799,7 +799,8 @@ void Frontend::Render() {
 
 	if (!NodeEditor.m_File.Loaded)
 	{
-		NodeEditor.LoadAINB(Config::GetRomFSFile("Logic/Dungeon001_1800.logic.root.ainb"));
+		//NodeEditor.LoadAINB(Config::GetRomFSFile("Logic/Dungeon001_1800.logic.root.ainb"));
+		NodeEditor.LoadAINB(Config::GetRomFSFile("Sequence/ActionGuide.module.ainb"));
 	}
 
 	//AINB Drawing

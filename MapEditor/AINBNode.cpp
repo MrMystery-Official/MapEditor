@@ -108,14 +108,14 @@ void AINBImGuiNode::PreparePinIDs()
             {
             case (uint16_t)AINBFile::NodeTypes::Element_Simultaneous:
             case (uint16_t)AINBFile::NodeTypes::Element_Fork:
-                FlowLinks.push_back(FlowLink{ MakeLinkID(), ExtraPins[0], NL });
+                FlowLinks.push_back(FlowLink{ MakeLinkID(), ExtraPins[0], &NL });
                 break;
             case (uint16_t)AINBFile::NodeTypes::Element_BoolSelector: {
-                FlowLinks.push_back(FlowLink{ MakeLinkID(), pinID, NL });
+                FlowLinks.push_back(FlowLink{ MakeLinkID(), pinID, &NL });
                 break;
             }
             default:
-                FlowLinks.push_back(FlowLink{ MakeLinkID(), pinID, NL });
+                FlowLinks.push_back(FlowLink{ MakeLinkID(), pinID, &NL });
                 break;
             }
         }
@@ -324,7 +324,7 @@ void AINBImGuiNode::DrawExtraPins()
     for (size_t i = 0; i < FlowLinks.size(); i++)
     {
         FlowLink& FlowLink = FlowLinks[i];
-        std::string title = MakeTitle(*Node, FlowLink.NodeLink, i, FlowLinks.size());
+        std::string title = MakeTitle(*Node, *FlowLink.NodeLink, i, FlowLinks.size());
         PrepareTextAlignRight(title, IconSize.x + ImGui::GetStyle().ItemSpacing.x);
         ImGui::TextUnformatted(title.c_str());
         ImGui::SameLine();
@@ -377,7 +377,7 @@ void AINBImGuiNode::Draw() {
     ed::PopStyleVar(2);
 
     ImGui::SameLine();
-    ImGui::Text("%s", Node->Name.c_str());
+    ImGui::Text("%s", Node->Type == (int)AINBFile::NodeTypes::UserDefined ? Node->Name.c_str() : AINBFile::NodeTypeToString(static_cast<AINBFile::NodeTypes>(Node->Type)).c_str());
 
     HeaderMin = ImGui::GetItemRectMin() - ImVec2(IconSize.x + ImGui::GetStyle().ItemSpacing.x + 8, 8);
     HeaderMax = ImVec2(HeaderMin.x + FrameWidth, ImGui::GetItemRectMax().y + 8);
@@ -476,7 +476,7 @@ void AINBImGuiNode::Draw() {
 void AINBImGuiNode::DrawLinks(std::vector<AINBImGuiNode>& nodes) {
     // Draw flow links
     for (FlowLink& flowLink : FlowLinks) {
-        ed::Link(flowLink.LinkID, flowLink.FlowFromPinID, nodes[flowLink.NodeLink.NodeIndex].FlowPinID, ImColor(255, 255, 255));
+        ed::Link(flowLink.LinkID, flowLink.FlowFromPinID, nodes[flowLink.NodeLink->NodeIndex].FlowPinID, ImColor(255, 255, 255));
     }
 
     // Draw node inputs

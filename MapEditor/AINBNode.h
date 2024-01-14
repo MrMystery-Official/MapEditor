@@ -22,7 +22,7 @@ public:
     struct FlowLink {
         ed::LinkId LinkID;
         ed::PinId FlowFromPinID;
-        AINBFile::LinkedNodeInfo NodeLink;
+        AINBFile::LinkedNodeInfo* NodeLink;
     };
     struct ParamLink {
         ed::LinkId LinkID;
@@ -49,6 +49,8 @@ public:
     std::unordered_map<std::string, ed::PinId> NameToPinID;
     std::unordered_map<int, ed::PinId> IdxToID[3];
 
+    ed::PinId FlowPinID;
+
     AINBImGuiNode(AINBFile::Node* Node);
 
     void DrawLinks(std::vector<AINBImGuiNode>& Nodes);
@@ -69,7 +71,6 @@ private:
     ImVec2 HeaderMax;
 
     ed::NodeId NodeID;
-    ed::PinId FlowPinID;
     std::vector<int> InputPins;
     std::vector<int> OutputPins;
     std::vector<int> ImmediatePins;

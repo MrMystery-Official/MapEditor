@@ -493,6 +493,15 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 					ShapeParamByml.GetType() = BymlFile::Type::Dictionary;
 					BymlFile::Node PolytopeArrayNode(BymlFile::Type::Array, "Polytope");
 					BymlFile::Node PolytopeShapeDict(BymlFile::Type::Dictionary);
+					
+					BymlFile::Node PolytopeMaterialsDict(BymlFile::Type::Array, "MaterialPresets");
+					{
+						BymlFile::Node PolytopeMaterial(BymlFile::Type::StringIndex, "Material_Stone");
+						PolytopeMaterial.SetValue<std::string>("Material_Stone");
+						PolytopeMaterialsDict.AddChild(PolytopeMaterial);
+					}
+					PolytopeShapeDict.AddChild(PolytopeMaterialsDict);
+
 					BymlFile::Node PolytopeVertices(BymlFile::Type::Array, "Vertices");
 
 					BfresFile* BfresModel = nullptr;
