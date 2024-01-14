@@ -210,15 +210,28 @@ void CreateExportOnlyFiles(std::vector<Actor>* Actors, std::string Path)
 				int MapType = Entry.path().filename().string()[4] - 48; //-48 to go from char to int
 				std::string Identifier = Entry.path().filename().string().substr(6, 3);
 				std::cout << "MapType: " << MapType << ", Identifier: " << Identifier << std::endl;
-				if (MapType == 0) //SmallDungeon
+				if (MapType == 0) //Sky
 				{
-					ResTable.SetFileSize("Banc/SmallDungeon/Dungeon" + Identifier + "_Static.bcett.byml", (ZStdFile::GetDecompressedFileSize(Config::GetWorkingDirFile("Save/Banc/SmallDungeon/Dungeon" + Identifier + "_Static.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml) + 1000) * 8);
-					ResTable.SetFileSize("Banc/SmallDungeon/Dungeon" + Identifier + "_Dynamic.bcett.byml", (ZStdFile::GetDecompressedFileSize(Config::GetWorkingDirFile("Save/Banc/SmallDungeon/Dungeon" + Identifier + "_Dynamic.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml) + 1000) * 8);
+					Identifier = Entry.path().filename().string();
+					Util::ReplaceString(Identifier, "Map_0_", "");
+					Identifier = Identifier.substr(0, Identifier.size() - 5);
+					ResTable.SetFileSize("Banc/MainField/Sky/" + Identifier + "_Static.bcett.byml", (ZStdFile::GetDecompressedFileSize(Config::GetWorkingDirFile("Save/Banc/MainField/Sky/" + Identifier + "_Static.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml) + 1000) * 8);
+					ResTable.SetFileSize("Banc/MainField/Sky/" + Identifier + "_Dynamic.bcett.byml", (ZStdFile::GetDecompressedFileSize(Config::GetWorkingDirFile("Save/Banc/MainField/Sky/" + Identifier + "_Dynamic.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml) + 1000) * 8);
 				}
 				else if (MapType == 1) //MainField
 				{
 					ResTable.SetFileSize("Banc/MainField/" + Identifier + "_Static.bcett.byml", (ZStdFile::GetDecompressedFileSize(Config::GetWorkingDirFile("Save/Banc/MainField/" + Identifier + "_Static.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml) + 1000) * 8);
 					ResTable.SetFileSize("Banc/MainField/" + Identifier + "_Dynamic.bcett.byml", (ZStdFile::GetDecompressedFileSize(Config::GetWorkingDirFile("Save/Banc/MainField/" + Identifier + "_Dynamic.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml) + 1000) * 8);
+				}
+				else if (MapType == 2) //MinusField
+				{
+					ResTable.SetFileSize("Banc/MinusField/" + Identifier + "_Static.bcett.byml", (ZStdFile::GetDecompressedFileSize(Config::GetWorkingDirFile("Save/Banc/MinusField/" + Identifier + "_Static.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml) + 1000) * 8);
+					ResTable.SetFileSize("Banc/MinusField/" + Identifier + "_Dynamic.bcett.byml", (ZStdFile::GetDecompressedFileSize(Config::GetWorkingDirFile("Save/Banc/MinusField/" + Identifier + "_Dynamic.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml) + 1000) * 8);
+				}
+				else if (MapType == 3) //SmallDungeon
+				{
+					ResTable.SetFileSize("Banc/SmallDungeon/Dungeon" + Identifier + "_Static.bcett.byml", (ZStdFile::GetDecompressedFileSize(Config::GetWorkingDirFile("Save/Banc/SmallDungeon/Dungeon" + Identifier + "_Static.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml) + 1000) * 8);
+					ResTable.SetFileSize("Banc/SmallDungeon/Dungeon" + Identifier + "_Dynamic.bcett.byml", (ZStdFile::GetDecompressedFileSize(Config::GetWorkingDirFile("Save/Banc/SmallDungeon/Dungeon" + Identifier + "_Dynamic.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml) + 1000) * 8);
 				}
 			}
 		}
