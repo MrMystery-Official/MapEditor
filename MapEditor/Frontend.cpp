@@ -1158,7 +1158,7 @@ void Frontend::Render() {
 		{
 			ImGui::Text("Please enter the map type and identifier:");
 			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-			const char* TypeDropdownItems[] = { "SkyIslands", "MainField", "MinusField", "SmallDungeon" };
+			const char* TypeDropdownItems[] = { "SkyIslands", "MainField", "MinusField", "SmallDungeon", "NormalStage" };
 			ImGui::Combo("Type", reinterpret_cast<int*>(&LoadMapPopUp.IntData), TypeDropdownItems, IM_ARRAYSIZE(TypeDropdownItems));
 			std::string ExampleText;
 			switch (LoadMapPopUp.IntData)
@@ -1174,6 +1174,9 @@ void Frontend::Render() {
 				break;
 			case 3:
 				ExampleText = "Dungeon ID (e.g. 001)";
+				break;
+			case 4:
+				ExampleText = "NormalStage name (e.g. TitleScene)";
 				break;
 			}
 			ImGui::InputText(ExampleText.c_str(), &LoadMapPopUp.GetData()[0]);

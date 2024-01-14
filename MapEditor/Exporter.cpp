@@ -233,6 +233,11 @@ void CreateExportOnlyFiles(std::vector<Actor>* Actors, std::string Path)
 					ResTable.SetFileSize("Banc/SmallDungeon/Dungeon" + Identifier + "_Static.bcett.byml", (ZStdFile::GetDecompressedFileSize(Config::GetWorkingDirFile("Save/Banc/SmallDungeon/Dungeon" + Identifier + "_Static.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml) + 1000) * 8);
 					ResTable.SetFileSize("Banc/SmallDungeon/Dungeon" + Identifier + "_Dynamic.bcett.byml", (ZStdFile::GetDecompressedFileSize(Config::GetWorkingDirFile("Save/Banc/SmallDungeon/Dungeon" + Identifier + "_Dynamic.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml) + 1000) * 8);
 				}
+				else if (MapType == 4) //NormalStage
+				{
+					ResTable.SetFileSize("Banc/NormalStage/" + Identifier + "_Static.bcett.byml", (ZStdFile::GetDecompressedFileSize(Config::GetWorkingDirFile("Save/Banc/NormalStage/" + Identifier + "_Static.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml) + 1000) * 8);
+					ResTable.SetFileSize("Banc/NormalStage/" + Identifier + "_Dynamic.bcett.byml", (ZStdFile::GetDecompressedFileSize(Config::GetWorkingDirFile("Save/Banc/NormalStage/" + Identifier + "_Dynamic.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml) + 1000) * 8);
+				}
 			}
 		}
 		for (const auto& Entry : std::filesystem::directory_iterator(Config::GetWorkingDirFile("Save/Logic")))

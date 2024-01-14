@@ -17,7 +17,8 @@ namespace MapLoader
 		Sky = 0,
 		MainField = 1,
 		MinusField = 2,
-		SmallDungeon = 3
+		SmallDungeon = 3,
+		NormalStage = 4
 	};
 
 	std::vector<Actor> LoadMap(std::string Key, MapLoader::Type Type);

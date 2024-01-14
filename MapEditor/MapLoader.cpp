@@ -398,6 +398,9 @@ std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type)
 	case MapLoader::Type::SmallDungeon:
 		BancPathPrefix += "SmallDungeon/Dungeon";
 		break;
+	case MapLoader::Type::NormalStage:
+		BancPathPrefix += "NormalStage/";
+		break;
 	default:
 		std::cerr << "Invalid map type! (Don't know how that is even possible)\n";
 		return std::vector<Actor>(0);
