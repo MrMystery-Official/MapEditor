@@ -137,7 +137,23 @@ void AINBImGuiNode::CalculateFrameWidth()
         {
             int Size = 8 * 2; // Frame Padding
             Size += ImGui::CalcTextSize(Param.Name.c_str()).x;
-            Size += 2 * ItemSpacingX + IconSize.x;
+            Size += ItemSpacingX + IconSize.x + ImGui::GetStyle().FramePadding.x * 2;
+            switch (Param.ValueType) {
+            case (int)AINBFile::ValueType::Int:
+            case (int)AINBFile::ValueType::String:
+            case (int)AINBFile::ValueType::Float:
+                Size += MinImmTextboxWidth;
+                break;
+            case (int)AINBFile::ValueType::Bool:
+                Size += ImGui::GetFrameHeight();
+                break;
+            case (int)AINBFile::ValueType::Vec3f:
+                Size += MinImmTextboxWidth * 3 + ItemSpacingX * 2;
+                break;
+            default:
+                break;
+            }
+
             FrameWidth = std::max(FrameWidth, Size);
         }
         for (AINBFile::OutputEntry& Param : Node->OutputParameters[i])

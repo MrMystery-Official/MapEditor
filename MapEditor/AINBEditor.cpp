@@ -366,9 +366,9 @@ void AINBEditor::DrawProperties()
                 {
                     if (Link.LinkID.Get() == this->m_SelectedLink.Get())
                     {
-                        this->m_SelectedLink = 0;
                         Link.InputParam->NodeIndex = -1;
                         Link.InputParam->ParameterIndex = -1;
+                        this->m_SelectedLink = 0;
                         GuiNode.UpdateLink(*Link.InputParam, Link.InputParamIndex);
                         goto FoundOutput;
                     }
@@ -387,6 +387,7 @@ void AINBEditor::DrawProperties()
         {
             this->m_File.Nodes.erase(this->m_File.Nodes.begin() + this->m_SelectedNodeIdx);
             this->m_GuiNodes.erase(this->m_GuiNodes.begin() + this->m_SelectedNodeIdx);
+            this->m_SelectedNodeIdx = -1;
 
             for (AINBImGuiNode& Node : this->m_GuiNodes)
             {
