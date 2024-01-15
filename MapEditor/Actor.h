@@ -199,6 +199,9 @@ public:
 
 	uint32_t& GetMergedActorIndex();
 	void SetMergedActorIndex(uint32_t Index);
+
+	uint32_t& GetMergedActorParentIndex();
+	void SetMergedActorParentIndex(uint32_t Index);
 private:
 	/* TotK Engine */
 	Actor::Type m_Type; //Required
@@ -233,4 +236,5 @@ private:
 
 	/* Merged actor */
 	uint32_t m_MergedActorIndex = 0;
+	uint32_t m_MergedActorParentIndex = 0;
 };

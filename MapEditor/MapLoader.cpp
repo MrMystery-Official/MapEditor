@@ -452,6 +452,7 @@ std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type, boo
 					ActorMerge.GetTranslate().SetZ(ActorMerge.GetTranslate().GetZ() + MapActor.GetTranslate().GetZ());
 
 					ActorMerge.SetMergedActorIndex(MergedActorIndex);
+					ActorMerge.SetMergedActorParentIndex(ActorIndex);
 
 					Actors.push_back(ActorMerge);
 				}
@@ -492,6 +493,7 @@ std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type, boo
 					ActorMerge.GetTranslate().SetZ(ActorMerge.GetTranslate().GetZ() + MapActor.GetTranslate().GetZ());
 
 					ActorMerge.SetMergedActorIndex(MergedActorIndex);
+					ActorMerge.SetMergedActorParentIndex(ActorIndex);
 
 					Actors.push_back(ActorMerge);
 				}

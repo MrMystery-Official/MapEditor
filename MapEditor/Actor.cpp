@@ -274,3 +274,12 @@ void Actor::SetMergedActorIndex(uint32_t Index)
 {
 	this->m_MergedActorIndex = Index;
 }
+
+uint32_t& Actor::GetMergedActorParentIndex()
+{
+	return this->m_MergedActorParentIndex;
+}
+void Actor::SetMergedActorParentIndex(uint32_t Index)
+{
+	this->m_MergedActorParentIndex = Index;
+}

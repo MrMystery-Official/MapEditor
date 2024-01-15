@@ -29,6 +29,8 @@ bool FirstFrame = true;
 
 AINBEditor NodeEditor;
 
+std::string LastActorGyml;
+
 struct RenderSettingsStruct
 {
 	bool Invisible = true;
@@ -886,6 +888,10 @@ void Frontend::Render() {
 						SelectedActor.GetPhive().Placement.insert({ "ID", std::to_string(NewHash.PhiveHash) });
 					}
 				}
+			}
+			if (SelectedActor.GetType() == Actor::Type::Merged)
+			{
+				ImGui::Text(Actors->at(SelectedActor.GetMergedActorParentIndex()).GetDynamic().DynamicString["BancPath"].c_str());
 			}
 			if (SelectedActor.GetGyml().rfind("MapEditor_Collision_", 0) != 0)
 			{
