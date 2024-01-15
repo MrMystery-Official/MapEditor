@@ -389,7 +389,7 @@ void CheckActorSelection(ImVec2 SceneWindowSize, ImVec2 MousePos)
 			Data[1] * 256 +
 			Data[2] * 256 * 256;
 
-		if (PickedActorId > 10000 || PickedActorId < 0)
+		if (PickedActorId == 3024412 || PickedActorId < 0) //3024412 = background color
 		{
 			PickedActorId = -1;
 		}
