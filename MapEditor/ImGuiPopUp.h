@@ -12,6 +12,7 @@ class ImGuiPopUp
 {
 public:
 	int IntData = 0;
+	bool BoolData = false;
 
 	bool& IsOpen();
 	bool& IsCompleted();

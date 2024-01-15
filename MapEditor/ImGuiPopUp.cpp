@@ -16,6 +16,7 @@ void ImGuiPopUp::Reset()
 	this->m_Open = false;
 	this->m_Data.clear();
 	this->IntData = 0;
+	this->BoolData = false;
 }
 
 void ImGuiPopUp::UpdateScale(float Scale)

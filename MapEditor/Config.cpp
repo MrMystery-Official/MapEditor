@@ -3,6 +3,7 @@
 
 BymlFile Config::StaticActorsByml;
 BymlFile Config::DynamicActorsByml;
+std::map<uint32_t, BymlFile> Config::MergedActorBymls;
 std::string Config::Key = "";
 uint8_t Config::MapType;
 std::string Config::WorkingDir;

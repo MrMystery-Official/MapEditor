@@ -4,11 +4,14 @@
 #include <imgui.h>
 #include <map>
 #include "Byml.h"
+#include "Vector3F.h"
+#include "Actor.h"
 
 namespace Config
 {
 	extern BymlFile StaticActorsByml;
 	extern BymlFile DynamicActorsByml;
+	extern std::map<uint32_t, BymlFile> MergedActorBymls;
 	extern std::string Key;
 	extern uint8_t MapType;
 	extern std::string WorkingDir;

@@ -51,7 +51,7 @@ ImGuiPopUp AddLinkPopUp("Add Link", 400, 146, 4);
 ImGuiPopUp AddRailPopUp("Add Rail", 400, 123, 3);
 
 ImGuiPopUp SetPathsPopUp("Setup", 600, 181, 2);
-ImGuiPopUp LoadMapPopUp("Open level", 468, 118, 1);
+ImGuiPopUp LoadMapPopUp("Open level", 468, 135, 1);
 ImGuiPopUp ExportModPopUp("Export mod", 468, 78, 1);
 
 namespace Frustum
@@ -867,7 +867,7 @@ void Frontend::Render() {
 			ImGui::InputScalar("Hash", ImGuiDataType_::ImGuiDataType_U64, &SelectedActor.GetHash());
 			ImGui::InputScalar("SRTHash", ImGuiDataType_::ImGuiDataType_U32, &SelectedActor.GetSRTHash());
 			ImGui::InputText("Name", &SelectedActor.GetName());
-			const char* TypeDropdownItems[] = { "Static", "Dynamic" };
+			const char* TypeDropdownItems[] = { "Static", "Dynamic", "Merged" };
 			ImGui::Combo("Type", reinterpret_cast<int*>(&SelectedActor.GetType()), TypeDropdownItems, IM_ARRAYSIZE(TypeDropdownItems));
 			if (HashMgr::GetHashes().size() > 0)
 			{
@@ -1185,15 +1185,17 @@ void Frontend::Render() {
 				break;
 			}
 			ImGui::InputText(ExampleText.c_str(), &LoadMapPopUp.GetData()[0]);
+			ImGui::Checkbox("Load merged actors", &LoadMapPopUp.BoolData);
 			if (ImGui::Button("Load"))
 			{
 				LoadMapPopUp.IsOpen() = false;
 				Actors->clear();
 				PickedActorId = -1;
-				(*Actors) = MapLoader::LoadMap(LoadMapPopUp.GetData()[0], (MapLoader::Type)LoadMapPopUp.IntData);
+				(*Actors) = MapLoader::LoadMap(LoadMapPopUp.GetData()[0], (MapLoader::Type)LoadMapPopUp.IntData, LoadMapPopUp.BoolData);
 				camera.Position.x = Actors->at(0).GetTranslate().GetX();
 				camera.Position.y = Actors->at(0).GetTranslate().GetY();
 				camera.Position.z = Actors->at(0).GetTranslate().GetZ();
+				LoadMapPopUp.Reset();
 			}
 			ImGui::PopItemWidth();
 			ImGui::SameLine();

@@ -1,4 +1,5 @@
 #include "Exporter.h"
+#include "MapLoader.h"
 
 void WriteBymlVector(BymlFile::Node* Root, std::string Key, Vector3F Vector, Vector3F DefaultValues, bool SkipDefaultVectorCheck)
 {
@@ -254,6 +255,23 @@ void CreateExportOnlyFiles(std::vector<Actor>* Actors, std::string Path)
 				File.close();
 			}
 		}
+
+		auto EstimateMergedDirectory = [](std::string Path, ResTableFile& Table) {
+			for (const auto& Entry : std::filesystem::directory_iterator(Config::GetWorkingDirFile("Save/" + Path)))
+			{
+				if (Entry.is_regular_file() && Util::EndsWith(Entry.path().filename().string(), ".bcett.byml.zs"))
+				{
+					Table.SetFileSize(Path + "/" + Entry.path().filename().string().substr(0, Entry.path().filename().string().length() - 3), (ZStdFile::GetDecompressedFileSize(Entry.path().string(), ZStdFile::Dictionary::BcettByaml) + 1000) * 8);
+				}
+			}
+		};
+
+		EstimateMergedDirectory("Banc/SmallDungeon/Merged", ResTable);
+		EstimateMergedDirectory("Banc/LargeDungeon/Merged", ResTable);
+		EstimateMergedDirectory("Banc/MainField/Merged", ResTable);
+		EstimateMergedDirectory("Banc/MinusField/Merged", ResTable);
+		EstimateMergedDirectory("Banc/NormalStage/Merged", ResTable);
+
 		Util::CreateDir(Path + "/System");
 		Util::CreateDir(Path + "/System/Resource");
 		ZStdFile::Compress(ResTable.ToBinary(), ZStdFile::Dictionary::None).WriteToFile(Path + "/System/Resource/ResourceSizeTable.Product." + Config::GetInternalGameVersion() + ".rsizetable.zs");
@@ -277,7 +295,6 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 	}
 
 	{
-
 		MapConfig::Save(Actors);
 
 		BymlFile& StaticByml = Config::StaticActorsByml;
@@ -286,12 +303,17 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 		StaticByml.GetNode("Actors")->GetChildren().clear();
 		DynamicByml.GetNode("Actors")->GetChildren().clear();
 
-		for (Actor Actor : *Actors)
+		for (auto& [Key, Val] : Config::MergedActorBymls)
 		{
-			if (Actor.GetGyml().rfind("MapEditor_Collision_", 0) == 0)
+			Val.GetNode("Actors")->GetChildren().clear();
+		}
+
+		for (Actor ExportedActor : *Actors)
+		{
+			if (ExportedActor.GetGyml().rfind("MapEditor_Collision_", 0) == 0)
 			{
-				Actor.SetType(Actor::Type::Static);
-				if (Actor.GetGyml().rfind("MapEditor_Collision_Cube_", 0) == 0)
+				ExportedActor.SetType(Actor::Type::Static);
+				if (ExportedActor.GetGyml().rfind("MapEditor_Collision_Cube_", 0) == 0)
 				{
 					BymlFile ShapeParamByml;
 					ShapeParamByml.GetType() = BymlFile::Type::Dictionary;
@@ -321,7 +343,7 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 					BoxHalfExtentsDict.AddChild(BoxHalfExtentsZ);
 
 					BymlFile::Node BoxMaterialsDict(BymlFile::Type::Array, "MaterialPresets");
-					if (!Actor.IsCollisionClimbable())
+					if (!ExportedActor.IsCollisionClimbable())
 					{
 						BymlFile::Node MaterialNode(BymlFile::Type::StringIndex, "Wall_NoClimb");
 						MaterialNode.SetValue<std::string>("Wall_NoClimb");
@@ -348,7 +370,7 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 						BymlFile File(ActorPackSarc.GetEntry(BymlsToReplaceData[i]).Bytes);
 						for (BymlFile::Node& Nodes : File.GetNodes())
 						{
-							ReplaceStringInBymlNodes(&Nodes, "MapEditor_Bake_Collision", Actor.GetGyml());
+							ReplaceStringInBymlNodes(&Nodes, "MapEditor_Bake_Collision", ExportedActor.GetGyml());
 						}
 						ActorPackSarc.GetEntry(BymlsToReplaceData[i]).Bytes = File.ToBinary(BymlFile::TableGeneration::Auto);
 					}
@@ -357,26 +379,26 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 
 					for (SarcFile::Entry& Value : ActorPackSarc.GetEntries())
 					{
-						Util::ReplaceString(Value.Name, "MapEditor_Bake_Collision", Actor.GetGyml());
+						Util::ReplaceString(Value.Name, "MapEditor_Bake_Collision", ExportedActor.GetGyml());
 					}
 
 
-					//ActorPackSarc.WriteToFile(Config::GetWorkingDirFile("Cache/MapEditor_Bake_Collision_Cube_" + std::to_string(Actor.GetSRTHash()) + ".pack"));
+					//ActorPackSarc.WriteToFile(Config::GetWorkingDirFile("Cache/MapEditor_Bake_Collision_Cube_" + std::to_string(ExportedExportedActor.GetSRTHash()) + ".pack"));
 					//ZStdFile ActorPackSarcCompressed(Util::GetWorkingDirFile("Cache/MapEditor_Bake_Collision_RCube_" + std::to_string(actor.SRTHash) + ".pack"), ZStdMode::ZStdDictionary::PackZSDictionary, ZStdMode::ZStdOperation::Compress);
 					Util::CreateDir(Path + "/Pack");
 					Util::CreateDir(Path + "/Pack/Actor");
 					//ActorPackSarcCompressed.Compress(ExportPath + "/Pack/Actor/MapEditor_Bake_Collision_RCube_" + std::to_string(actor.SRTHash) + ".pack.zs");
-					ZStdFile::Compress(ActorPackSarc.ToBinary(), ZStdFile::Dictionary::Pack).WriteToFile(Path + "/Pack/Actor/" + Actor.GetGyml() + ".pack.zs");
+					ZStdFile::Compress(ActorPackSarc.ToBinary(), ZStdFile::Dictionary::Pack).WriteToFile(Path + "/Pack/Actor/" + ExportedActor.GetGyml() + ".pack.zs");
 				}
 
-				if (Actor.GetGyml().rfind("MapEditor_Collision_File_", 0) == 0)
+				if (ExportedActor.GetGyml().rfind("MapEditor_Collision_File_", 0) == 0)
 				{
 					BymlFile ShapeParamByml;
 					ShapeParamByml.GetType() = BymlFile::Type::Dictionary;
 					BymlFile::Node PhiveShapeNode(BymlFile::Type::Array, "PhshMesh");
 					BymlFile::Node PhiveShapeDict(BymlFile::Type::Dictionary);
 					BymlFile::Node PhiveShapeValue(BymlFile::Type::StringIndex, "PhshMeshPath");
-					PhiveShapeValue.SetValue<std::string>("Work/Phive/Shape/Dcc/" + Actor.GetCollisionFile());
+					PhiveShapeValue.SetValue<std::string>("Work/Phive/Shape/Dcc/" + ExportedActor.GetCollisionFile());
 
 					PhiveShapeDict.AddChild(PhiveShapeValue);
 					PhiveShapeNode.AddChild(PhiveShapeDict);
@@ -391,26 +413,26 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 						BymlFile File(ActorPackSarc.GetEntry(BymlsToReplaceData[i]).Bytes);
 						for (BymlFile::Node& Nodes : File.GetNodes())
 						{
-							ReplaceStringInBymlNodes(&Nodes, "MapEditor_Bake_Collision", Actor.GetGyml());
+							ReplaceStringInBymlNodes(&Nodes, "MapEditor_Bake_Collision", ExportedActor.GetGyml());
 						}
 						ActorPackSarc.GetEntry(BymlsToReplaceData[i]).Bytes = File.ToBinary(BymlFile::TableGeneration::Auto);
 					}
 
 					for (SarcFile::Entry& Value : ActorPackSarc.GetEntries())
 					{
-						Util::ReplaceString(Value.Name, "MapEditor_Bake_Collision", Actor.GetGyml());
+						Util::ReplaceString(Value.Name, "MapEditor_Bake_Collision", ExportedActor.GetGyml());
 					}
 
 
-					//ActorPackSarc.WriteToFile(Config::GetWorkingDirFile("Cache/MapEditor_Bake_Collision_Cube_" + std::to_string(Actor.GetSRTHash()) + ".pack"));
+					//ActorPackSarc.WriteToFile(Config::GetWorkingDirFile("Cache/MapEditor_Bake_Collision_Cube_" + std::to_string(ExportedExportedActor.GetSRTHash()) + ".pack"));
 					//ZStdFile ActorPackSarcCompressed(Util::GetWorkingDirFile("Cache/MapEditor_Bake_Collision_RCube_" + std::to_string(actor.SRTHash) + ".pack"), ZStdMode::ZStdDictionary::PackZSDictionary, ZStdMode::ZStdOperation::Compress);
 					Util::CreateDir(Path + "/Pack");
 					Util::CreateDir(Path + "/Pack/Actor");
 					//ActorPackSarcCompressed.Compress(ExportPath + "/Pack/Actor/MapEditor_Bake_Collision_RCube_" + std::to_string(actor.SRTHash) + ".pack.zs");
-					ZStdFile::Compress(ActorPackSarc.ToBinary(), ZStdFile::Dictionary::Pack).WriteToFile(Path + "/Pack/Actor/" + Actor.GetGyml() + ".pack.zs");
+					ZStdFile::Compress(ActorPackSarc.ToBinary(), ZStdFile::Dictionary::Pack).WriteToFile(Path + "/Pack/Actor/" + ExportedActor.GetGyml() + ".pack.zs");
 				}
 
-				if (Actor.GetGyml().rfind("MapEditor_Collision_Custom_", 0) == 0)
+				if (ExportedActor.GetGyml().rfind("MapEditor_Collision_Custom_", 0) == 0)
 				{
 					/*
 								BymlFile ShapeParamByml;
@@ -452,8 +474,8 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 				BfresFile* BfresModel = nullptr;
 
 				for (Actor& LinkedActor : *Actors) {
-					if (LinkedActor.SRTHash == actor.CollisionPolytopeLinkSRTHash) {
-						BfresModel = &LinkedActor.Model;
+					if (LinkedExportedExportedActor.SRTHash == actor.CollisionPolytopeLinkSRTHash) {
+						BfresModel = &LinkedExportedExportedActor.Model;
 						break;
 					}
 				}
@@ -517,7 +539,7 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 					BfresFile* BfresModel = nullptr;
 
 					for (auto& LinkedActor : *Actors) {
-						if (LinkedActor.GetSRTHash() == Actor.GetCollisionSRTHash()) {
+						if (LinkedActor.GetSRTHash() == ExportedActor.GetCollisionSRTHash()) {
 							BfresModel = LinkedActor.GetModel();
 							break;
 						}
@@ -567,46 +589,56 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 						BymlFile File(ActorPackSarc.GetEntry(BymlsToReplaceData[i]).Bytes);
 						for (BymlFile::Node& Nodes : File.GetNodes())
 						{
-							ReplaceStringInBymlNodes(&Nodes, "MapEditor_Bake_Collision", Actor.GetGyml());
+							ReplaceStringInBymlNodes(&Nodes, "MapEditor_Bake_Collision", ExportedActor.GetGyml());
 						}
 						ActorPackSarc.GetEntry(BymlsToReplaceData[i]).Bytes = File.ToBinary(BymlFile::TableGeneration::Auto);
 					}
 
 					for (SarcFile::Entry& Value : ActorPackSarc.GetEntries())
 					{
-						Util::ReplaceString(Value.Name, "MapEditor_Bake_Collision", Actor.GetGyml());
+						Util::ReplaceString(Value.Name, "MapEditor_Bake_Collision", ExportedActor.GetGyml());
 					}
 
 
-					//ActorPackSarc.WriteToFile(Config::GetWorkingDirFile("Cache/MapEditor_Bake_Collision_Cube_" + std::to_string(Actor.GetSRTHash()) + ".pack"));
+					//ActorPackSarc.WriteToFile(Config::GetWorkingDirFile("Cache/MapEditor_Bake_Collision_Cube_" + std::to_string(ExportedExportedActor.GetSRTHash()) + ".pack"));
 					//ZStdFile ActorPackSarcCompressed(Util::GetWorkingDirFile("Cache/MapEditor_Bake_Collision_RCube_" + std::to_string(actor.SRTHash) + ".pack"), ZStdMode::ZStdDictionary::PackZSDictionary, ZStdMode::ZStdOperation::Compress);
 					Util::CreateDir(Path + "/Pack");
 					Util::CreateDir(Path + "/Pack/Actor");
 					//ActorPackSarcCompressed.Compress(ExportPath + "/Pack/Actor/MapEditor_Bake_Collision_RCube_" + std::to_string(actor.SRTHash) + ".pack.zs");
-					ZStdFile::Compress(ActorPackSarc.ToBinary(), ZStdFile::Dictionary::Pack).WriteToFile(Path + "/Pack/Actor/" + Actor.GetGyml() + ".pack.zs");
+					ZStdFile::Compress(ActorPackSarc.ToBinary(), ZStdFile::Dictionary::Pack).WriteToFile(Path + "/Pack/Actor/" + ExportedActor.GetGyml() + ".pack.zs");
 				}
 			}
 
 			BymlFile::Node ActorNode(BymlFile::Type::Dictionary);
 
-			if (Actor.IsBakeable())
+			if (ExportedActor.GetType() == Actor::Type::Merged)
+			{
+				auto Iter = Config::MergedActorBymls.begin();
+				std::advance(Iter, ExportedActor.GetMergedActorIndex());
+
+				ExportedActor.GetTranslate().SetX(ExportedActor.GetTranslate().GetX() - Actors->at(Iter->first).GetTranslate().GetX());
+				ExportedActor.GetTranslate().SetY(ExportedActor.GetTranslate().GetY() - Actors->at(Iter->first).GetTranslate().GetY());
+				ExportedActor.GetTranslate().SetZ(ExportedActor.GetTranslate().GetZ() - Actors->at(Iter->first).GetTranslate().GetZ());
+			}
+
+			if (ExportedActor.IsBakeable())
 			{
 				BymlFile::Node Bakeable(BymlFile::Type::Bool, "Bakeable");
 				Bakeable.SetValue<bool>(true);
 				ActorNode.AddChild(Bakeable);
 			}
 
-			if (Actor.GetExtraCreateRadius() != 0)
+			if (ExportedActor.GetExtraCreateRadius() != 0)
 			{
 				BymlFile::Node ExtraCreateRadius(BymlFile::Type::Float, "ExtraCreateRadius");
-				ExtraCreateRadius.SetValue<float>(Actor.GetExtraCreateRadius());
+				ExtraCreateRadius.SetValue<float>(ExportedActor.GetExtraCreateRadius());
 				ActorNode.AddChild(ExtraCreateRadius);
 			}
 
-			if (!Actor.GetDynamic().DynamicString.empty() || !Actor.GetDynamic().DynamicVector.empty())
+			if (!ExportedActor.GetDynamic().DynamicString.empty() || !ExportedActor.GetDynamic().DynamicVector.empty())
 			{
 				BymlFile::Node Dynamic(BymlFile::Type::Dictionary, "Dynamic");
-				for (auto const& [Key, Value] : Actor.GetDynamic().DynamicString)
+				for (auto const& [Key, Value] : ExportedActor.GetDynamic().DynamicString)
 				{
 					BymlFile::Node DynamicEntry(GetDynamicValueDataType(Value), Key);
 					if (DynamicEntry.GetType() == BymlFile::Type::UInt32) DynamicEntry.GetType() = BymlFile::Type::Int32;
@@ -637,7 +669,7 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 					}
 					Dynamic.AddChild(DynamicEntry);
 				}
-				for (auto const& [Key, Value] : Actor.GetDynamic().DynamicVector)
+				for (auto const& [Key, Value] : ExportedActor.GetDynamic().DynamicVector)
 				{
 					WriteBymlVector(&Dynamic, Key, Value, Vector3F(0, 0, 0), true);
 				}
@@ -645,38 +677,38 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 			}
 
 			BymlFile::Node Gyml(BymlFile::Type::StringIndex, "Gyaml");
-			Gyml.SetValue<std::string>(Actor.GetGyml());
+			Gyml.SetValue<std::string>(ExportedActor.GetGyml());
 			ActorNode.AddChild(Gyml);
 
 			BymlFile::Node Hash(BymlFile::Type::UInt64, "Hash");
-			Hash.SetValue<uint64_t>(Actor.GetHash());
+			Hash.SetValue<uint64_t>(ExportedActor.GetHash());
 			ActorNode.AddChild(Hash);
 
-			if (Actor.IsForceActive())
+			if (ExportedActor.IsForceActive())
 			{
 				BymlFile::Node ForceActive(BymlFile::Type::Bool, "IsForceActive");
-				ForceActive.SetValue<bool>(Actor.IsForceActive());
+				ForceActive.SetValue<bool>(ExportedActor.IsForceActive());
 				ActorNode.AddChild(ForceActive);
 			}
 
-			if (Actor.IsInWater())
+			if (ExportedActor.IsInWater())
 			{
 				BymlFile::Node IsInWater(BymlFile::Type::Bool, "IsInWater");
-				IsInWater.SetValue<bool>(Actor.IsInWater());
+				IsInWater.SetValue<bool>(ExportedActor.IsInWater());
 				ActorNode.AddChild(IsInWater);
 			}
 
-			if (Actor.IsPhysicsStable())
+			if (ExportedActor.IsPhysicsStable())
 			{
 				BymlFile::Node PhysicStable(BymlFile::Type::Bool, "IsPhysicsStable");
-				PhysicStable.SetValue<bool>(Actor.IsPhysicsStable());
+				PhysicStable.SetValue<bool>(ExportedActor.IsPhysicsStable());
 				ActorNode.AddChild(PhysicStable);
 			}
 
-			if (!Actor.GetLinks().empty())
+			if (!ExportedActor.GetLinks().empty())
 			{
 				BymlFile::Node Links(BymlFile::Type::Array, "Links");
-				for (Actor::Link& Link : Actor.GetLinks())
+				for (Actor::Link& Link : ExportedActor.GetLinks())
 				{
 
 					BymlFile::Node LinkDict(BymlFile::Type::Dictionary);
@@ -705,39 +737,39 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 				ActorNode.AddChild(Links);
 			}
 
-			if (Actor.GetMoveRadius() != 0)
+			if (ExportedActor.GetMoveRadius() != 0)
 			{
 				BymlFile::Node MoveRadius(BymlFile::Type::Float, "MoveRadius");
-				MoveRadius.SetValue<float>(Actor.GetMoveRadius());
+				MoveRadius.SetValue<float>(ExportedActor.GetMoveRadius());
 				ActorNode.AddChild(MoveRadius);
 			}
 
-			if (Actor.GetName() != "")
+			if (ExportedActor.GetName() != "")
 			{
 				BymlFile::Node Name(BymlFile::Type::StringIndex, "Name");
-				Name.SetValue<std::string>(Actor.GetName());
+				Name.SetValue<std::string>(ExportedActor.GetName());
 				ActorNode.AddChild(Name);
 			}
 
-			if (!Actor.GetPhive().Placement.empty() || !Actor.GetPhive().ConstraintLink.Owners.empty() || Actor.GetPhive().ConstraintLink.ID != 0 || !Actor.GetPhive().ConstraintLink.Refers.empty())
+			if (!ExportedActor.GetPhive().Placement.empty() || !ExportedActor.GetPhive().ConstraintLink.Owners.empty() || ExportedActor.GetPhive().ConstraintLink.ID != 0 || !ExportedActor.GetPhive().ConstraintLink.Refers.empty())
 			{
 				BymlFile::Node Phive(BymlFile::Type::Dictionary, "Phive");
 
-				if (!Actor.GetPhive().ConstraintLink.Owners.empty() || Actor.GetPhive().ConstraintLink.ID != 0 || !Actor.GetPhive().ConstraintLink.Refers.empty())
+				if (!ExportedActor.GetPhive().ConstraintLink.Owners.empty() || ExportedActor.GetPhive().ConstraintLink.ID != 0 || !ExportedActor.GetPhive().ConstraintLink.Refers.empty())
 				{
 					BymlFile::Node ConstraintLink(BymlFile::Type::Dictionary, "ConstraintLink");
 
-					if (Actor.GetPhive().ConstraintLink.ID != 0)
+					if (ExportedActor.GetPhive().ConstraintLink.ID != 0)
 					{
 						BymlFile::Node ID(BymlFile::Type::UInt64, "ID");
-						ID.SetValue<uint64_t>(Actor.GetPhive().ConstraintLink.ID);
+						ID.SetValue<uint64_t>(ExportedActor.GetPhive().ConstraintLink.ID);
 						ConstraintLink.AddChild(ID);
 					}
 
-					if (!Actor.GetPhive().ConstraintLink.Owners.empty())
+					if (!ExportedActor.GetPhive().ConstraintLink.Owners.empty())
 					{
 						BymlFile::Node Owners(BymlFile::Type::Array, "Owners");
-						for (Actor::Phive::ConstraintLinkData::OwnerData& Owner : Actor.GetPhive().ConstraintLink.Owners)
+						for (Actor::Phive::ConstraintLinkData::OwnerData& Owner : ExportedActor.GetPhive().ConstraintLink.Owners)
 						{
 							BymlFile::Node OwnerNode(BymlFile::Type::Dictionary);
 
@@ -947,10 +979,10 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 						ConstraintLink.AddChild(Owners);
 					}
 
-					if (!Actor.GetPhive().ConstraintLink.Refers.empty())
+					if (!ExportedActor.GetPhive().ConstraintLink.Refers.empty())
 					{
 						BymlFile::Node Refers(BymlFile::Type::Array, "Refers");
-						for (Actor::Phive::ConstraintLinkData::ReferData Refer : Actor.GetPhive().ConstraintLink.Refers)
+						for (Actor::Phive::ConstraintLinkData::ReferData Refer : ExportedActor.GetPhive().ConstraintLink.Refers)
 						{
 							BymlFile::Node ReferNode(BymlFile::Type::Dictionary);
 
@@ -971,11 +1003,11 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 					Phive.AddChild(ConstraintLink);
 				}
 
-				if (!Actor.GetPhive().Placement.empty())
+				if (!ExportedActor.GetPhive().Placement.empty())
 				{
 					BymlFile::Node Placement(BymlFile::Type::Dictionary, "Placement");
 
-					for (auto const& [Key, Value] : Actor.GetPhive().Placement)
+					for (auto const& [Key, Value] : ExportedActor.GetPhive().Placement)
 					{
 						BymlFile::Node PlacementEntry(GetDynamicValueDataType(Value), Key);
 						if (Key == "GroupID")
@@ -1008,11 +1040,11 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 					Phive.AddChild(Placement);
 				}
 
-				if (!Actor.GetPhive().Rails.empty())
+				if (!ExportedActor.GetPhive().Rails.empty())
 				{
 					BymlFile::Node Rails(BymlFile::Type::Array, "Rails");
 
-					for (Actor::Phive::RailData& Rail : Actor.GetPhive().Rails)
+					for (Actor::Phive::RailData& Rail : ExportedActor.GetPhive().Rails)
 					{
 						BymlFile::Node RailNode(BymlFile::Type::Dictionary);
 
@@ -1047,19 +1079,19 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 					Phive.AddChild(Rails);
 				}
 
-				if (Actor.GetPhive().RopeHeadLink.ID != 0)
+				if (ExportedActor.GetPhive().RopeHeadLink.ID != 0)
 				{
 					BymlFile::Node RopeHeadLinkNode(BymlFile::Type::Dictionary, "RopeHeadLink");
 
 					BymlFile::Node ID(BymlFile::Type::UInt64, "ID");
-					ID.SetValue<uint64_t>(Actor.GetPhive().RopeHeadLink.ID);
+					ID.SetValue<uint64_t>(ExportedActor.GetPhive().RopeHeadLink.ID);
 					RopeHeadLinkNode.AddChild(ID);
 
-					if (!Actor.GetPhive().RopeHeadLink.Owners.empty())
+					if (!ExportedActor.GetPhive().RopeHeadLink.Owners.empty())
 					{
 						BymlFile::Node Owners(BymlFile::Type::Array, "Owners");
 
-						for (uint64_t Owner : Actor.GetPhive().RopeHeadLink.Owners)
+						for (uint64_t Owner : ExportedActor.GetPhive().RopeHeadLink.Owners)
 						{
 							BymlFile::Node OwnerNode(BymlFile::Type::Dictionary);
 
@@ -1072,11 +1104,11 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 						RopeHeadLinkNode.AddChild(Owners);
 					}
 
-					if (!Actor.GetPhive().RopeHeadLink.Refers.empty())
+					if (!ExportedActor.GetPhive().RopeHeadLink.Refers.empty())
 					{
 						BymlFile::Node Refers(BymlFile::Type::Array, "Refers");
 
-						for (uint64_t Refer : Actor.GetPhive().RopeHeadLink.Refers)
+						for (uint64_t Refer : ExportedActor.GetPhive().RopeHeadLink.Refers)
 						{
 							BymlFile::Node ReferNode(BymlFile::Type::Dictionary);
 
@@ -1092,19 +1124,19 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 					Phive.AddChild(RopeHeadLinkNode);
 				}
 
-				if (Actor.GetPhive().RopeTailLink.ID != 0)
+				if (ExportedActor.GetPhive().RopeTailLink.ID != 0)
 				{
 					BymlFile::Node RopeTailLinkNode(BymlFile::Type::Dictionary, "RopeTailLink");
 
 					BymlFile::Node ID(BymlFile::Type::UInt64, "ID");
-					ID.SetValue<uint64_t>(Actor.GetPhive().RopeTailLink.ID);
+					ID.SetValue<uint64_t>(ExportedActor.GetPhive().RopeTailLink.ID);
 					RopeTailLinkNode.AddChild(ID);
 
-					if (!Actor.GetPhive().RopeTailLink.Owners.empty())
+					if (!ExportedActor.GetPhive().RopeTailLink.Owners.empty())
 					{
 						BymlFile::Node Owners(BymlFile::Type::Array, "Owners");
 
-						for (uint64_t Owner : Actor.GetPhive().RopeTailLink.Owners)
+						for (uint64_t Owner : ExportedActor.GetPhive().RopeTailLink.Owners)
 						{
 							BymlFile::Node OwnerNode(BymlFile::Type::Dictionary);
 
@@ -1117,11 +1149,11 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 						RopeTailLinkNode.AddChild(Owners);
 					}
 
-					if (!Actor.GetPhive().RopeTailLink.Refers.empty())
+					if (!ExportedActor.GetPhive().RopeTailLink.Refers.empty())
 					{
 						BymlFile::Node Refers(BymlFile::Type::Array, "Refers");
 
-						for (uint64_t Refer : Actor.GetPhive().RopeTailLink.Refers)
+						for (uint64_t Refer : ExportedActor.GetPhive().RopeTailLink.Refers)
 						{
 							BymlFile::Node ReferNode(BymlFile::Type::Dictionary);
 
@@ -1140,10 +1172,10 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 				ActorNode.AddChild(Phive);
 			}
 
-			if (!Actor.GetPresence().empty())
+			if (!ExportedActor.GetPresence().empty())
 			{
 				BymlFile::Node Presence(BymlFile::Type::Dictionary, "Presence");
-				for (auto const& [Key, Value] : Actor.GetPresence())
+				for (auto const& [Key, Value] : ExportedActor.GetPresence())
 				{
 					BymlFile::Node PresenceEntry(GetDynamicValueDataType(Value), Key);
 					switch (PresenceEntry.GetType())
@@ -1175,10 +1207,10 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 				ActorNode.AddChild(Presence);
 			}
 
-			if (!Actor.GetRails().empty())
+			if (!ExportedActor.GetRails().empty())
 			{
 				BymlFile::Node Rails(BymlFile::Type::Array, "Rails");
-				for (Actor::Rail Rail : Actor.GetRails())
+				for (Actor::Rail Rail : ExportedActor.GetRails())
 				{
 					BymlFile::Node RailDict(BymlFile::Type::Dictionary);
 
@@ -1202,36 +1234,47 @@ void Exporter::Export(std::vector<Actor>* Actors, std::string Path, bool Save)
 				ActorNode.AddChild(Rails);
 			}
 
-			Vector3F RotateVector(Util::DegreeToRadian(Actor.GetRotate().GetX()), Util::DegreeToRadian(Actor.GetRotate().GetY()), Util::DegreeToRadian(Actor.GetRotate().GetZ()));
+			Vector3F RotateVector(Util::DegreeToRadian(ExportedActor.GetRotate().GetX()), Util::DegreeToRadian(ExportedActor.GetRotate().GetY()), Util::DegreeToRadian(ExportedActor.GetRotate().GetZ()));
 			WriteBymlVector(&ActorNode, "Rotate", RotateVector, Vector3F(0, 0, 0), false);
 
 			BymlFile::Node SRTHash(BymlFile::Type::UInt32, "SRTHash");
-			SRTHash.SetValue<uint32_t>(Actor.GetSRTHash());
+			SRTHash.SetValue<uint32_t>(ExportedActor.GetSRTHash());
 			ActorNode.AddChild(SRTHash);
 
-			WriteBymlVector(&ActorNode, "Scale", Actor.GetScale(), Vector3F(1, 1, 1), false);
-			WriteBymlVector(&ActorNode, "Translate", Actor.GetTranslate(), Vector3F(0, 0, 0), false);
+			WriteBymlVector(&ActorNode, "Scale", ExportedActor.GetScale(), Vector3F(1, 1, 1), false);
+			WriteBymlVector(&ActorNode, "Translate", ExportedActor.GetTranslate(), Vector3F(0, 0, 0), false);
 
-			if (Actor.IsTurnActorNearEnemy())
+			if (ExportedActor.IsTurnActorNearEnemy())
 			{
 				BymlFile::Node TurnActorNearEnemy(BymlFile::Type::Bool, "TurnActorNearEnemy");
-				TurnActorNearEnemy.SetValue<bool>(Actor.IsTurnActorNearEnemy());
+				TurnActorNearEnemy.SetValue<bool>(ExportedActor.IsTurnActorNearEnemy());
 				ActorNode.AddChild(TurnActorNearEnemy);
 			}
 
-			if (Actor.GetType() == Actor::Type::Static)
+			if (ExportedActor.GetType() == Actor::Type::Static)
 			{
 				StaticByml.GetNode("Actors")->AddChild(ActorNode);
 			}
-			else
+			else if(ExportedActor.GetType() == Actor::Type::Dynamic)
 			{
 				DynamicByml.GetNode("Actors")->AddChild(ActorNode);
+			}
+			else //Merged
+			{
+				auto Iter = Config::MergedActorBymls.begin();
+				std::advance(Iter, ExportedActor.GetMergedActorIndex());
+
+				Iter->second.GetNode("Actors")->AddChild(ActorNode);
 			}
 		}
 
 		ZStdFile::Compress(StaticByml.ToBinary(BymlFile::TableGeneration::Auto), ZStdFile::Dictionary::BcettByaml).WriteToFile(Path + "/" + Config::BancPrefix + Config::Key + "_Static.bcett.byml.zs");
 		ZStdFile::Compress(DynamicByml.ToBinary(BymlFile::TableGeneration::Auto), ZStdFile::Dictionary::BcettByaml).WriteToFile(Path + "/" + Config::BancPrefix + Config::Key + "_Dynamic.bcett.byml.zs");
 
+		for (auto& [Key, Val] : Config::MergedActorBymls)
+		{
+			ZStdFile::Compress(Val.ToBinary(BymlFile::TableGeneration::Auto), ZStdFile::Dictionary::BcettByaml).WriteToFile(Path + "/" + Actors->at(Key).GetDynamic().DynamicString["BancPath"] + ".zs");
+		}
 	}
 
 Copy:

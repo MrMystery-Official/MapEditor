@@ -1,4 +1,5 @@
 #include "Actor.h"
+#include "Config.h"
 
 /* Actor Model Library - Start */
 std::map<std::string, BfresFile> ActorModelLibrary::Models;
@@ -263,4 +264,13 @@ uint32_t& Actor::GetCollisionSRTHash()
 void Actor::SetCollisionSRTHash(uint32_t Hash)
 {
 	this->m_CollisionSRTHash = Hash;
+}
+
+uint32_t& Actor::GetMergedActorIndex()
+{
+	return this->m_MergedActorIndex;
+}
+void Actor::SetMergedActorIndex(uint32_t Index)
+{
+	this->m_MergedActorIndex = Index;
 }

@@ -22,6 +22,6 @@ namespace MapLoader
 		NormalStage = 5
 	};
 
-	std::vector<Actor> LoadMap(std::string Key, MapLoader::Type Type);
+	std::vector<Actor> LoadMap(std::string Key, MapLoader::Type Type, bool LoadMergedActors);
 	void DetectInternalGameVersion();
 };

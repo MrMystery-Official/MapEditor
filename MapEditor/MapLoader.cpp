@@ -379,7 +379,7 @@ void InterpretActorNode(Actor* Actor, BymlFile::Node* Node)
 	}
 }
 
-std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type)
+std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type, bool LoadMergedActors)
 {
 	std::vector<Actor> Actors;
 
@@ -410,22 +410,13 @@ std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type)
 	}
 
 	Config::BancPrefix = BancPathPrefix;
-
-	if (!Util::FileExists(Config::GetWorkingDirFile("Save/" + BancPathPrefix + Key + "_Dynamic.bcett.byml.zs")))
-	{
-		Util::CopyFileToDest(Config::GetRomFSFile(BancPathPrefix + Key + "_Dynamic.bcett.byml.zs"), Config::GetWorkingDirFile("Save/" + BancPathPrefix + Key + "_Dynamic.bcett.byml.zs"));
-	}
-	if (!Util::FileExists(Config::GetWorkingDirFile("Save/" + BancPathPrefix + Key + "_Static.bcett.byml.zs")))
-	{
-		Util::CopyFileToDest(Config::GetRomFSFile(BancPathPrefix + Key + "_Static.bcett.byml.zs"), Config::GetWorkingDirFile("Save/" + BancPathPrefix + Key + "_Static.bcett.byml.zs"));
-	}
 	if (!Util::FileExists(Config::GetWorkingDirFile("Save/Banc/SmallDungeon/StartPos/SmallDungeon.startpos.byml.zs")))
 	{
 		Util::CopyFileToDest(Config::GetRomFSFile("Banc/SmallDungeon/StartPos/SmallDungeon.startpos.byml.zs"), Config::GetWorkingDirFile("Save/Banc/SmallDungeon/StartPos/SmallDungeon.startpos.byml.zs"));
 	}
 
-	BymlFile StaticActorByml(ZStdFile::Decompress(Config::GetWorkingDirFile("Save/" + BancPathPrefix + Key + "_Static.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml).Data);
-	BymlFile DynamicActorByml(ZStdFile::Decompress(Config::GetWorkingDirFile("Save/" + BancPathPrefix + Key + "_Dynamic.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml).Data);
+	BymlFile StaticActorByml(ZStdFile::Decompress(Config::GetRomFSFile(BancPathPrefix + Key + "_Static.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml).Data);
+	BymlFile DynamicActorByml(ZStdFile::Decompress(Config::GetRomFSFile(BancPathPrefix + Key + "_Dynamic.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml).Data);
 
 	Config::StaticActorsByml = StaticActorByml;
 	Config::DynamicActorsByml = DynamicActorByml;
@@ -433,20 +424,88 @@ std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type)
 	Config::Key = Key;
 	Config::MapType = (uint8_t)Type;
 
+	std::vector<std::string> DecodedMergedActorFiles;
+
+	int MergedActorIndex = 0;
+
 	for (BymlFile::Node& ActorNode : DynamicActorByml.GetNode("Actors")->GetChildren())
 	{
-		Actor Actor;
-		Actor.SetType(Actor::Type::Dynamic);
-		InterpretActorNode(&Actor, &ActorNode);
-		Actors.push_back(Actor);
+		Actor MapActor;
+		MapActor.SetType(Actor::Type::Dynamic);
+		InterpretActorNode(&MapActor, &ActorNode);
+		Actors.push_back(MapActor);
+ 		int ActorIndex = Actors.size() - 1;
+		if (MapActor.GetDynamic().DynamicString.find("BancPath") != MapActor.GetDynamic().DynamicString.end() && LoadMergedActors)
+		{
+			if (std::find(DecodedMergedActorFiles.begin(), DecodedMergedActorFiles.end(), MapActor.GetDynamic().DynamicString["BancPath"]) == DecodedMergedActorFiles.end())
+			{
+				std::cout << "Decoding merged actor " << MapActor.GetDynamic().DynamicString["BancPath"] << std::endl;
+				BymlFile MergedActorByml(ZStdFile::Decompress(Config::GetRomFSFile(MapActor.GetDynamic().DynamicString["BancPath"] + ".zs"), ZStdFile::Dictionary::BcettByaml).Data);
+				for (BymlFile::Node& ActorNodeMerge : MergedActorByml.GetNode("Actors")->GetChildren())
+				{
+					Actor ActorMerge;
+					ActorMerge.SetType(Actor::Type::Merged);
+					InterpretActorNode(&ActorMerge, &ActorNodeMerge);
+
+					ActorMerge.GetTranslate().SetX(ActorMerge.GetTranslate().GetX() + MapActor.GetTranslate().GetX());
+					ActorMerge.GetTranslate().SetY(ActorMerge.GetTranslate().GetY() + MapActor.GetTranslate().GetY());
+					ActorMerge.GetTranslate().SetZ(ActorMerge.GetTranslate().GetZ() + MapActor.GetTranslate().GetZ());
+
+					ActorMerge.SetMergedActorIndex(MergedActorIndex);
+
+					Actors.push_back(ActorMerge);
+				}
+				DecodedMergedActorFiles.push_back(MapActor.GetDynamic().DynamicString["BancPath"]);
+
+				Config::MergedActorBymls.insert({ ActorIndex, MergedActorByml });
+
+				MergedActorIndex++;
+			}
+			else
+			{
+				std::cout << "Already decoded merged actor file " << MapActor.GetDynamic().DynamicString["BancPath"] << std::endl;
+			}
+		}
 	}
 
 	for (BymlFile::Node& ActorNode : StaticActorByml.GetNode("Actors")->GetChildren())
 	{
-		Actor Actor;
-		Actor.SetType(Actor::Type::Static);
-		InterpretActorNode(&Actor, &ActorNode);
-		Actors.push_back(Actor);
+		Actor MapActor;
+		MapActor.SetType(Actor::Type::Static);
+		InterpretActorNode(&MapActor, &ActorNode);
+		Actors.push_back(MapActor);
+		int ActorIndex = Actors.size() - 1;
+		if (MapActor.GetDynamic().DynamicString.find("BancPath") != MapActor.GetDynamic().DynamicString.end() && LoadMergedActors)
+		{
+			if (std::find(DecodedMergedActorFiles.begin(), DecodedMergedActorFiles.end(), MapActor.GetDynamic().DynamicString["BancPath"]) == DecodedMergedActorFiles.end())
+			{
+				std::cout << "Decoding merged actor " << MapActor.GetDynamic().DynamicString["BancPath"] << std::endl;
+				BymlFile MergedActorByml(ZStdFile::Decompress(Config::GetRomFSFile(MapActor.GetDynamic().DynamicString["BancPath"] + ".zs"), ZStdFile::Dictionary::BcettByaml).Data);
+				for (BymlFile::Node& ActorNodeMerge : MergedActorByml.GetNode("Actors")->GetChildren())
+				{
+					Actor ActorMerge;
+					ActorMerge.SetType(Actor::Type::Merged);
+					InterpretActorNode(&ActorMerge, &ActorNodeMerge);
+
+					ActorMerge.GetTranslate().SetX(ActorMerge.GetTranslate().GetX() + MapActor.GetTranslate().GetX());
+					ActorMerge.GetTranslate().SetY(ActorMerge.GetTranslate().GetY() + MapActor.GetTranslate().GetY());
+					ActorMerge.GetTranslate().SetZ(ActorMerge.GetTranslate().GetZ() + MapActor.GetTranslate().GetZ());
+
+					ActorMerge.SetMergedActorIndex(MergedActorIndex);
+
+					Actors.push_back(ActorMerge);
+				}
+				DecodedMergedActorFiles.push_back(MapActor.GetDynamic().DynamicString["BancPath"]);
+
+				Config::MergedActorBymls.insert({ ActorIndex, MergedActorByml });
+
+				MergedActorIndex++;
+			}
+			else
+			{
+				std::cout << "Already decoded merged actor file " << MapActor.GetDynamic().DynamicString["BancPath"] << std::endl;
+			}
+		}
 	}
 
 	std::map<std::string, std::string> ActorModelNames;

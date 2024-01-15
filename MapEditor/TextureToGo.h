@@ -9,7 +9,6 @@
 
 #include "BinaryVectorReader.h"
 #include "Util.h"
-#include "Config.h"
 
 class TextureToGo
 {

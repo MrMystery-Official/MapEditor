@@ -2,6 +2,7 @@
 #include "TegraSwizzle.h"
 #include <stb/stb_image_write.h>
 #include <stb/stb_image.h>
+#include "Config.h"
 
 /*
     std::vector<unsigned char>& GetPixles();

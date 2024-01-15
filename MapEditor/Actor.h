@@ -5,7 +5,6 @@
 #include <map>
 #include "Bfres.h"
 #include "Vector3F.h"
-#include "Config.h"
 
 namespace ActorModelLibrary
 {
@@ -23,7 +22,8 @@ public:
 	enum class Type : uint8_t
 	{
 		Static = 0,
-		Dynamic = 1
+		Dynamic = 1,
+		Merged = 2
 	};
 
 	struct Rail
@@ -197,6 +197,8 @@ public:
 	uint32_t& GetCollisionSRTHash();
 	void SetCollisionSRTHash(uint32_t Hash);
 
+	uint32_t& GetMergedActorIndex();
+	void SetMergedActorIndex(uint32_t Index);
 private:
 	/* TotK Engine */
 	Actor::Type m_Type; //Required
@@ -206,11 +208,9 @@ private:
 	bool m_ForceActive = false; //Not required
 	uint64_t m_Hash; //Required
 	uint32_t m_SRTHash; //Required
-	Vector3F m_Translate = Vector3F(0, 0, 0); //Not required
 	Vector3F m_Rotate = Vector3F(0, 0, 0); //Not required
 	Vector3F m_Scale = Vector3F(1, 1, 1); //Not required
 	std::string m_Name = ""; //Not required
-	Dynamic m_Dynamic; //Not required
 	std::map<std::string, std::string> m_Presence; //Not required
 	std::vector<Rail> m_Rails; //Not required
 	std::vector<Link> m_Links; //Not rquired
@@ -219,6 +219,8 @@ private:
 	bool m_TurnActorNearEnemy = false; //Not required
 	bool m_InWater = false; //Not required
 	std::string m_Category = ""; //Not required
+	Dynamic m_Dynamic; //Not required
+	Vector3F m_Translate = Vector3F(0, 0, 0); //Not required
 
 	/* Editor */
 	BfresFile* m_Model; //Technically not required, but edior will crash if not set
@@ -228,4 +230,7 @@ private:
 	bool m_CollisionClimbable = false; //Not reqiured
 	std::string m_CollisionFile = ""; //Not required
 	uint32_t m_CollisionSRTHash = 0; //Not required
+
+	/* Merged actor */
+	uint32_t m_MergedActorIndex = 0;
 };
