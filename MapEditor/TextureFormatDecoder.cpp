@@ -275,3 +275,22 @@ void TextureFormatDecoder::DecodeASTC8x8UNorm(unsigned int Width, unsigned int H
 
 	Data.resize(Width * Height * 4); //4 bytes per pixel, RGBA
 }
+
+void TextureFormatDecoder::DecodeASTC4x4UNorm(unsigned int Width, unsigned int Height, std::vector<unsigned char>& Data, std::vector<unsigned char>& Dest, TextureToGo* TexToGo)
+{
+	// 1 decoded block contains 64 pixels
+
+	// Calculate the number of blocks in the image
+	int NumBlocks = (Width + 7) / 8 * (Height + 7) / 8;
+	Dest.resize(NumBlocks * 16 * 4); // Allocate space for all decoded pixels in RGB format, 4 bytes per pixel
+
+	unsigned char* DestPtr = Dest.data();
+
+	// Split up the data into blocks
+	for (int i = 0; i < NumBlocks; i++)
+	{
+		basisu::astc::decompress((unsigned char*)DestPtr + i * 16 * 4, &Data[i * 16], false, 4, 4); // Pass the data pointer directly to the basisu::astc::decompress function
+	}
+
+	Data.resize(Width * Height * 4); //4 bytes per pixel, RGBA
+}

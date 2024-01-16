@@ -1505,7 +1505,6 @@ void Frontend::Render() {
 
 		for (int SubModelIndex = 0; SubModelIndex < LODModel->GL_Textures.size(); SubModelIndex++)
 		{
-			LODModel->GL_Textures[SubModelIndex]->texUnit(TextureShader, "Texture", 0);
 			LODModel->GL_Textures[SubModelIndex]->Bind();
 			LODModel->GL_VAO[SubModelIndex].Bind();
 

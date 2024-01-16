@@ -20,6 +20,7 @@ namespace TegraSwizzle
 		FormatInfo BC3_UNORM_SRGB;
 		FormatInfo BC4_UNORM;
 		FormatInfo ASTC_8x8_UNORM;
+		FormatInfo ASTC_4x4_UNORM;
 		FormatInfo UNSUPPORTED;
 	};
 

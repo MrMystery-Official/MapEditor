@@ -619,6 +619,25 @@ std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type, boo
 		}
 	}
 
+	std::map<std::string, uint32_t> ActorCount;
+
+	for (Actor MapActor : Actors)
+	{
+		if (ActorCount.find(MapActor.GetGyml()) != ActorCount.end())
+		{
+			ActorCount[MapActor.GetGyml()] += 1;
+		}
+		else
+		{
+			ActorCount.insert({ MapActor.GetGyml(), 1 });
+		}
+	}
+
+	for (auto& [Key, Val] : ActorCount)
+	{
+		//std::cout << Key << ": " << Val << std::endl;
+	}
+
 	MapConfig::Load(&Actors);
 
 	return Actors;
