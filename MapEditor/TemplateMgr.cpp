@@ -82,6 +82,27 @@ void TemplateMgr::Template::Paste(Vector3F BaseLocation, std::vector<Actor>* Act
 
 		TmplActor.SetHash(NewHashes[TmplActor.GetHash()].ActorHash);
 
+		if (TmplActor.GetGyml().find("Area") != std::string::npos)
+		{
+			if (TmplActor.GetGyml().find("Forbid") == std::string::npos)
+			{
+				TmplActor.SetModel(ActorModelLibrary::GetModel("Area"));
+			}
+			else
+			{
+				TmplActor.SetModel(ActorModelLibrary::GetModel("ForbidArea"));
+			}
+			TmplActor.SetCategory("System");
+			goto FinishedBfresLoading;
+		}
+
+		if (TmplActor.GetGyml().find("MapEditor_Collision_") != std::string::npos)
+		{
+			TmplActor.SetModel(ActorModelLibrary::GetModel("Collision"));
+			TmplActor.SetCategory("Editor");
+			goto FinishedBfresLoading;
+		}
+
 		{
 			SarcFile ActorPackFile(ZStdFile::Decompress(Config::GetRomFSFile("Pack/Actor/" + TmplActor.GetGyml() + ".pack.zs"), ZStdFile::Dictionary::Pack).Data);
 			std::string ModelInfoEntryName;
@@ -131,6 +152,8 @@ void TemplateMgr::Initialize()
 			{
 				Actor TmplActor;
 				TmplActor.SetType(static_cast<Actor::Type>(File.GetNode("Actors")->GetChild(i)->GetChild("BymlType")->GetValue<uint32_t>()));
+				TmplActor.SetCollisionClimbable(File.GetNode("Actors")->GetChild(i)->GetChild("CollisionClimbable")->GetValue<bool>());
+				TmplActor.SetCollisionFile(File.GetNode("Actors")->GetChild(i)->GetChild("CollisionFile")->GetValue<std::string>());
 				MapLoader::InterpretActorNode(&TmplActor, File.GetNode("Actors")->GetChild(i));
 				Tmpl.GetActors()[i] = TmplActor;
 			}
@@ -154,9 +177,19 @@ void TemplateMgr::Save()
 		for (Actor& TmplActor : Tmpl.GetActors())
 		{
 			BymlFile::Node ActorNode = Exporter::ActorToByml("", false, &Tmpl.GetActors(), TmplActor);
+
 			BymlFile::Node ActorBymlType(BymlFile::Type::UInt32, "BymlType");
 			ActorBymlType.SetValue<uint32_t>((uint32_t)TmplActor.GetType());
+
+			BymlFile::Node ActorCollisionClimbable(BymlFile::Type::Bool, "CollisionClimbable");
+			ActorCollisionClimbable.SetValue<bool>(TmplActor.IsCollisionClimbable());
+
+			BymlFile::Node ActorCollisionFile(BymlFile::Type::StringIndex, "CollisionFile");
+			ActorCollisionFile.SetValue<std::string>(TmplActor.GetCollisionFile());
+
 			ActorNode.AddChild(ActorBymlType);
+			ActorNode.AddChild(ActorCollisionClimbable);
+			ActorNode.AddChild(ActorCollisionFile);
 			ActorsNode.AddChild(ActorNode);
 		}
 

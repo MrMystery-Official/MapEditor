@@ -1225,9 +1225,21 @@ void Frontend::Render() {
 				CreateTemplatePopUp.IsCompleted() = true;
 			}
 
-			for (Actor Actor : CreateTemplateActors)
+			int ID = 0;
+
+			for (auto Iter = CreateTemplateActors.begin(); Iter != CreateTemplateActors.end();)
 			{
-				ImGui::Text(Actor.GetGyml().c_str());
+				ImGui::Text(Iter->GetGyml().c_str());
+				ImGui::SameLine();
+				if (ImGui::Button(("Del##" + std::to_string(ID)).c_str()))
+				{
+					Iter = CreateTemplateActors.erase(Iter);
+				}
+				else
+				{
+					Iter++;
+				}
+				ID++;
 			}
 
 			if (ImGui::Button("Create"))
