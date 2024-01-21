@@ -1637,10 +1637,6 @@ void Frontend::Render() {
 
 				glDrawElements(GL_TRIANGLES, sizeof(int) * LODModel->Faces[SubModelIndex].size(), GL_UNSIGNED_INT, 0);
 			}
-			else
-			{
-				std::cout << "Skipping " << Actor.GetGyml() << " for Index " << SubModelIndex << " and Hash " << Actor.GetHash() << std::endl;
-			}
 		}
 	}
 
