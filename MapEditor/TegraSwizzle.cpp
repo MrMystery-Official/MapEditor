@@ -4,7 +4,7 @@ const TegraSwizzle::TegraSwizzleFormats Formats =
 {
 	.BC1_UNORM = {8, 4, 4, TextureFormatDecoder::DecodeBC1},
 	.BC3_UNORM_SRGB = {16, 4, 4, TextureFormatDecoder::DecodeBC3SRG},
-	//.BC4_UNORM = {8, 4, 4, TextureFormatDecoder::DecodeBC4},
+	.BC4_UNORM = {8, 4, 4, TextureFormatDecoder::DecodeBC4},
 	.ASTC_8x8_UNORM = {16, 8, 8, TextureFormatDecoder::DecodeASTC8x8UNorm}, //0x101
 	.ASTC_4x4_UNORM = {16, 4, 4, TextureFormatDecoder::DecodeASTC4x4UNorm}, //0x102, currently not fully implemented
 	.UNSUPPORTED = {0, 0, 0, nullptr}
@@ -21,15 +21,11 @@ TegraSwizzle::FormatInfo TegraSwizzle::GetFormatInfo(uint16_t FormatId)
 	case 0x505:
 		return Formats.BC3_UNORM_SRGB;
 	case 0x606:
-		return Formats.BC3_UNORM_SRGB;
+		return Formats.BC4_UNORM;
+	case 0x602:
+		return Formats.BC4_UNORM;
 	case 0x101:
 		return Formats.ASTC_8x8_UNORM;
-		/*
-		case 0x602:
-			return Formats.BC4_UNORM;
-		case 0x606:
-			return Formats.BC4_UNORM;
-		*/
 	default:
 		std::cout << "UNKNOWN TEXTURE FORMAT " << FormatId << "!\n";
 		return Formats.UNSUPPORTED;

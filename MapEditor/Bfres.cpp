@@ -38,6 +38,10 @@ void BfresFile::CreateOpenGLObjects()
     {
         for (BfresFile::LOD& LODModel : Model.LODs)
         {
+            LODModel.GL_Textures.resize(LODModel.Faces.size());
+            LODModel.GL_VAO.resize(LODModel.Faces.size());
+            LODModel.GL_VBO.resize(LODModel.Faces.size());
+            LODModel.GL_EBO.resize(LODModel.Faces.size());
             int FaceOffset = 0;
             for (int SubModelIndex = 0; SubModelIndex < LODModel.Faces.size(); SubModelIndex++)
             {
@@ -55,7 +59,7 @@ void BfresFile::CreateOpenGLObjects()
                     continue;
                 }
 
-                LODModel.GL_Textures.push_back(GLTextureLibrary::GetTexture(Model.Materials[SubModelIndex].Textures[0].Texture));
+                LODModel.GL_Textures[SubModelIndex] = GLTextureLibrary::GetTexture(Model.Materials[SubModelIndex].Textures[0].Texture);
 
                 VAO VAO1 = VAO(true);
                 VAO1.Bind();
@@ -86,9 +90,9 @@ void BfresFile::CreateOpenGLObjects()
                 VBO1.Unbind();
                 EBO1.Unbind();
 
-                LODModel.GL_VAO.push_back(VAO1);
-                LODModel.GL_VBO.push_back(VBO1);
-                LODModel.GL_EBO.push_back(EBO1);
+                LODModel.GL_VAO[SubModelIndex] = VAO1;
+                LODModel.GL_VBO[SubModelIndex] = VBO1;
+                LODModel.GL_EBO[SubModelIndex] = EBO1;
             }
         }
     }
@@ -296,9 +300,7 @@ BfresFile::BfresFile(std::string Path, std::vector<unsigned char> Bytes)
 
     uint32_t FileAlignment = Reader.ReadUInt32();
     uint32_t RelocationTableOffset = Reader.ReadUInt32();
-    uint32_t GlobalBufferOffset = Reader.ReadUInt32(); //288
-
-    GlobalBufferOffset = GlobalBufferOffset == Bytes.size() ? 20480 : (GlobalBufferOffset + 288);
+    uint32_t GlobalBufferOffset = Reader.ReadUInt32();
 
     Reader.Seek(8, BinaryVectorReader::Position::Current);
 
@@ -309,6 +311,18 @@ BfresFile::BfresFile(std::string Path, std::vector<unsigned char> Bytes)
     uint16_t FMDLCount = Reader.ReadUInt16();
 
     this->m_Models.resize(FMDLCount);
+
+    uint32_t DataStart = 0;
+    if (GlobalBufferOffset == Bytes.size())
+    {
+        Reader.Seek(RelocationTableOffset, BinaryVectorReader::Position::Begin);
+        Reader.Seek(0x30, BinaryVectorReader::Position::Current);
+        DataStart = Reader.ReadUInt32();
+    }
+    else
+    {
+        DataStart = GlobalBufferOffset + 288;
+    }
 
     Reader.Seek(FMDLOffset, BinaryVectorReader::Position::Begin);
     for (uint16_t FMDLIndex = 0; FMDLIndex < FMDLCount; FMDLIndex++)
@@ -399,19 +413,20 @@ BfresFile::BfresFile(std::string Path, std::vector<unsigned char> Bytes)
 
             TextureInterpreter:
 
-            for (TextureToGo* TexToGo : LocalTextures)
-            {
-                BfresFile::BfresTexture MaterialTexture;
-                MaterialTexture.Texture = TexToGo;
-                Materials[FMATIndex].Textures.push_back(MaterialTexture);
-            }
+            int LocalTextureCount = LocalTextures.size();
+            int LocalTransparentTextureCount = LocalTransparentTextures.size();
+            Materials[FMATIndex].Textures.resize(LocalTextureCount + LocalTransparentTextureCount);
 
-            for (TextureToGo* TexToGo : LocalTransparentTextures)
+
+            for (int i = 0; i < (LocalTextureCount + LocalTransparentTextureCount); i++)
             {
                 BfresFile::BfresTexture MaterialTexture;
-                MaterialTexture.Texture = TexToGo;
-                Materials[FMATIndex].Textures.push_back(MaterialTexture);
-                Materials[FMATIndex].IsTransparent = true;
+                MaterialTexture.Texture = i < LocalTextureCount ? LocalTextures[i] : LocalTransparentTextures[i - LocalTextureCount];
+                if (i >= LocalTextureCount)
+                {
+                    Materials[FMATIndex].IsTransparent = true;
+                }
+                Materials[FMATIndex].Textures[i] = MaterialTexture;
             }
 
             if (Materials[FMATIndex].Textures.empty())
@@ -481,7 +496,7 @@ BfresFile::BfresFile(std::string Path, std::vector<unsigned char> Bytes)
                     uint32_t VertexSkip = Reader.ReadUInt32();
                     //uint16_t NumSubMeshes = Reader.ReadUInt16();
 
-                    Reader.Seek(GlobalBufferOffset + FaceBufferOffset, BinaryVectorReader::Position::Begin);
+                    Reader.Seek(DataStart + FaceBufferOffset, BinaryVectorReader::Position::Begin);
 
                     this->m_Models[FMDLIndex].LODs[LODIndex].Faces[FSHPIndex].resize(FaceCount);
                     if (FaceType == 1)
@@ -532,7 +547,7 @@ BfresFile::BfresFile(std::string Path, std::vector<unsigned char> Bytes)
             uint8_t NumBuffer = Reader.ReadUInt8();
             uint16_t Idx = Reader.ReadUInt16();
             uint32_t VertexCount = Reader.ReadUInt32();
-            uint32_t VertexSkinCount = Reader.ReadUInt32();
+            uint8_t VertexSkinCount = Reader.ReadUInt8();
 
             std::vector<BfresFile::VertexBufferSize> VertexBufferSizeArray(NumBuffer);
             std::vector<uint32_t> VertexBufferStrideArray(NumBuffer);
@@ -575,13 +590,16 @@ BfresFile::BfresFile(std::string Path, std::vector<unsigned char> Bytes)
                 Reader.Seek(FVTXAttArrOffset + 16 * (i + 1), BinaryVectorReader::Position::Begin);
             }
 
+            std::cout << BufferOffset << std::endl;
+
             std::vector<BfresFile::VertexBuffer> VertexBuffers(NumBuffer);
             for (int i = 0; i < NumBuffer; i++)
             {
                 VertexBuffers[i].Stride = VertexBufferStrideArray[i];
                 VertexBuffers[i].Size = VertexBufferSizeArray[i].Size;
+                VertexBuffers[i].Data.resize(VertexBuffers[i].Size);
 
-                if (i == 0) VertexBuffers[i].BufferOffset = GlobalBufferOffset + BufferOffset;
+                if (i == 0) VertexBuffers[i].BufferOffset = DataStart + BufferOffset;
                 if (i > 0) VertexBuffers[i].BufferOffset = VertexBuffers[i - 1].BufferOffset + VertexBuffers[i - 1].Size;
                 if (VertexBuffers[i].BufferOffset % 8 != 0) VertexBuffers[i].BufferOffset = VertexBuffers[i].BufferOffset + (8 - (VertexBuffers[i].BufferOffset % 8));
 
@@ -589,7 +607,7 @@ BfresFile::BfresFile(std::string Path, std::vector<unsigned char> Bytes)
 
                 for (int j = 0; j < VertexBuffers[i].Size; j++)
                 {
-                    VertexBuffers[i].Data.push_back((unsigned char)Reader.ReadUInt8());
+                    VertexBuffers[i].Data[j] = (unsigned char)Reader.ReadUInt8();
                 }
             }
 
@@ -675,31 +693,6 @@ BfresFile::BfresFile(std::string Path, std::vector<unsigned char> Bytes)
                 {
                     if (!(this->m_Models[FMDLIndex].Materials[FVTXIndex].Textures.size()-1 >= UVBufferIndex)) continue;
                     this->m_Models[FMDLIndex].Materials[FVTXIndex].Textures[UVBufferIndex].TexCoordinates.resize(VertexCount * 2);
-                   
-                    if (GlobalBufferOffset == 0x5000) //Switch Toolbox Bfres
-                    {
-                        switch (Attribute.Format)
-                        {
-                        case (uint16_t)VertexBufferFormat::Format_16_16_Single:
-                            AttributeSegmentSize = 4;
-                            break;
-                        case (uint16_t)VertexBufferFormat::Format_16_16_UNorm:
-                            AttributeSegmentSize = 4;
-                            break;
-                        case (uint16_t)VertexBufferFormat::Format_16_16_SNorm:
-                            AttributeSegmentSize = 4;
-                            break;
-                        case (uint16_t)VertexBufferFormat::Format_8_8_UNorm:
-                            AttributeSegmentSize = 2;
-                            break;
-                        case (uint16_t)VertexBufferFormat::Format_8_8_SNorm:
-                            AttributeSegmentSize = 2;
-                            break;
-                        case (uint16_t)VertexBufferFormat::Format_32_32_Single:
-                            AttributeSegmentSize = 8;
-                            break;
-                        }
-                    }
 
                     for (int VertexIndex = 0; VertexIndex < VertexCount; VertexIndex++)
                     {

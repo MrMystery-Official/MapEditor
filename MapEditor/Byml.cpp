@@ -6,6 +6,14 @@ BymlFile::Node::Node(BymlFile::Type Type, std::string Key) : m_Type(Type), m_Key
 {
 }
 
+BymlFile::Node::~Node()
+{
+    for (BymlFile::Node& Child : this->m_Children)
+    {
+        Child.~Node();
+    }
+}
+
 BymlFile::Type& BymlFile::Node::GetType()
 {
     return this->m_Type;
@@ -68,14 +76,16 @@ template<class T> T BymlFile::Node::GetValue() //For all numbers
     return Value;
 }
 
-template<> void BymlFile::Node::SetValue(std::string Value) //Value os a string
+template<> void BymlFile::Node::SetValue(std::string Value) //Value is a string
 {
+    this->m_Value.clear();
     this->m_Value.resize(Value.length());
     memcpy(this->m_Value.data(), Value.data(), Value.length());
 }
 
 template<class T> void BymlFile::Node::SetValue(T Value) //Value is a default C++ type
 {
+    this->m_Value.clear();
     this->m_Value.resize(sizeof(Value));
     memcpy(this->m_Value.data(), &Value, sizeof(Value));
 }
@@ -85,7 +95,7 @@ std::vector<BymlFile::Node>& BymlFile::Node::GetChildren()
     return this->m_Children;
 }
 
-void BymlFile::Node::AddChild(BymlFile::Node& Node)
+void BymlFile::Node::AddChild(BymlFile::Node Node)
 {
     this->m_Children.push_back(Node);
 }
@@ -163,7 +173,7 @@ int BymlFile::AlignUp(int Value, int Size)
     return Value + (Size - Value % Size) % Size;
 }
 
-void BymlFile::ParseNode(BinaryVectorReader& Reader, int Offset, BymlFile::Type Type, std::string Key, BymlFile::Node* Parent)
+void BymlFile::ParseNode(BinaryVectorReader& Reader, int Offset, BymlFile::Type Type, std::string Key, BymlFile::Node* Parent, uint32_t ChildIndex)
 {
     if (Type == BymlFile::Type::Null)
     {
@@ -224,10 +234,11 @@ void BymlFile::ParseNode(BinaryVectorReader& Reader, int Offset, BymlFile::Type 
         Reader.Seek(LocalOffset + 1, BinaryVectorReader::Position::Begin);
         uint32_t Size = Reader.ReadUInt24();
         uint32_t ValueArrayOffset = LocalOffset + 4 + this->AlignUp(Size, 4);
+        Node.GetChildren().resize(Size);
         for (uint32_t i = 0; i < Size; i++)
         {
             Reader.Seek(LocalOffset + 4 + i, BinaryVectorReader::Position::Begin);
-            this->ParseNode(Reader, ValueArrayOffset + 4 * i, static_cast<BymlFile::Type>(Reader.ReadUInt8()), std::to_string(i), &Node);
+            this->ParseNode(Reader, ValueArrayOffset + 4 * i, static_cast<BymlFile::Type>(Reader.ReadUInt8()), std::to_string(i), &Node, i);
         }
         break;
     }
@@ -236,13 +247,14 @@ void BymlFile::ParseNode(BinaryVectorReader& Reader, int Offset, BymlFile::Type 
         uint32_t LocalOffset = Reader.ReadUInt32();
         Reader.Seek(LocalOffset + 1, BinaryVectorReader::Position::Begin);
         uint32_t Size = Reader.ReadUInt24();
+        Node.GetChildren().resize(Size);
         for (uint32_t i = 0; i < Size; i++)
         {
             uint32_t EntryOffset = LocalOffset + 4 + 8 * i;
             Reader.Seek(EntryOffset, BinaryVectorReader::Position::Begin);
             uint32_t StringOffset = Reader.ReadUInt24();
             Reader.Seek(EntryOffset + 3, BinaryVectorReader::Position::Begin);
-            this->ParseNode(Reader, EntryOffset + 4, static_cast<BymlFile::Type>(Reader.ReadUInt8()), this->m_HashKeyTable[StringOffset], &Node);
+            this->ParseNode(Reader, EntryOffset + 4, static_cast<BymlFile::Type>(Reader.ReadUInt8()), this->m_HashKeyTable[StringOffset], &Node, i);
         }
         break;
     }
@@ -250,7 +262,7 @@ void BymlFile::ParseNode(BinaryVectorReader& Reader, int Offset, BymlFile::Type 
         std::cerr << "Unsupported node type " << (int)Type << "!\n";
     }
 
-    Parent->AddChild(Node);
+    Parent->GetChildren()[ChildIndex] = Node;
 }
 
 std::vector<BymlFile::Node>& BymlFile::GetNodes()
@@ -689,13 +701,15 @@ BymlFile::BymlFile(std::vector<unsigned char> Bytes)
     }
 
     BymlFile::Node RootNode(RootNodeType == 0xC0 ? BymlFile::Type::Array : BymlFile::Type::Dictionary, "root");
-    
-    this->ParseNode(Reader, 12, RootNode.GetType(), "root", &RootNode);
+    RootNode.GetChildren().resize(1);
+    this->ParseNode(Reader, 12, RootNode.GetType(), "root", &RootNode, 0);
 
-    for (BymlFile::Node Node : RootNode.GetChildren()[0].GetChildren())
+    this->m_Nodes.resize(RootNode.GetChildren()[0].GetChildren().size());
+    for (int i = 0; i < RootNode.GetChildren()[0].GetChildren().size(); i++)
     {
-        this->m_Nodes.push_back(Node);
+        this->m_Nodes[i] = RootNode.GetChildren()[0].GetChildren()[i];
     }
+
     this->m_Type = RootNode.GetType();
 }
 

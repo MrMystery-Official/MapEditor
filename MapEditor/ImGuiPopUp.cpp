@@ -14,7 +14,10 @@ void ImGuiPopUp::Reset()
 {
 	this->m_Completed = false;
 	this->m_Open = false;
-	this->m_Data.clear();
+	for (std::string& Str : this->m_Data)
+	{
+		Str = "";
+	}
 	this->IntData = 0;
 	this->BoolData = false;
 }

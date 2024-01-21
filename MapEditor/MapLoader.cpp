@@ -20,7 +20,7 @@ void MapLoader::DetectInternalGameVersion()
 	}
 }
 
-void InterpretActorNode(Actor* Actor, BymlFile::Node* Node)
+void MapLoader::InterpretActorNode(Actor* Actor, BymlFile::Node* Node)
 {
 	Actor->SetGyml(Node->GetChild("Gyaml")->GetValue<std::string>());
 	Actor->SetHash(Node->GetChild("Hash")->GetValue<uint64_t>());

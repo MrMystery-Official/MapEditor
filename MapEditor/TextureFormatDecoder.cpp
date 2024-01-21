@@ -1,6 +1,7 @@
 #include "TextureFormatDecoder.h"
-
 #include "astc_decomp.h"
+#define BCDEC_IMPLEMENTATION 1
+#include "bcdec.h"
 
 unsigned long PackRGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
@@ -255,6 +256,42 @@ void TextureFormatDecoder::DecodeBC3SRG(unsigned int Width, unsigned int Height,
 	}
 
 	Dest.resize(Width * Height * 4);
+}
+
+void TextureFormatDecoder::DecodeBC4(unsigned int Width, unsigned int Height, std::vector<unsigned char>& Data, std::vector<unsigned char>& Dest, TextureToGo* TexToGo)
+{
+	if (Width * Height <= 1)
+	{
+		Dest.resize(4);
+		return;
+	}
+
+	Dest.resize(Width * Height * 4);
+
+	unsigned long BlockCountX = (Width + 3) / 4;
+	unsigned long BlockCountY = (Height + 3) / 4;
+
+	unsigned char* BlockStorage = Data.data();
+	unsigned char* BlockDest = new unsigned char[Width * Height]; //Allocating at heap
+
+	for (unsigned long j = 0; j < BlockCountY; j++)
+	{
+		for (unsigned long i = 0; i < BlockCountX; i++)
+		{
+			bcdec_bc4(BlockStorage, BlockDest + ((j * 4) * (BlockCountX * 4) + (i * 4)), BlockCountX * 4);
+			BlockStorage += BCDEC_BC4_BLOCK_SIZE;
+		}
+	}
+
+	for (int i = 0; i < Width * Height; i++)
+	{
+		Dest[i * 4] = BlockDest[i];
+		Dest[i * 4 + 1] = BlockDest[i];
+		Dest[i * 4 + 2] = BlockDest[i];
+		Dest[i * 4 + 3] = BlockDest[i];
+	}
+
+	delete[] BlockDest;
 }
 
 void TextureFormatDecoder::DecodeASTC8x8UNorm(unsigned int Width, unsigned int Height, std::vector<unsigned char>& Data, std::vector<unsigned char>& Dest, TextureToGo* TexToGo)

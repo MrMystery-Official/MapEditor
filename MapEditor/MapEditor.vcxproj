@@ -200,6 +200,7 @@
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="stb.cpp" />
     <ClCompile Include="TegraSwizzle.cpp" />
+    <ClCompile Include="TemplateMgr.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TextureFormatDecoder.cpp" />
     <ClCompile Include="TextureToGo.cpp" />
@@ -217,6 +218,7 @@
     <ClInclude Include="AINBNode.h" />
     <ClInclude Include="AINBNodeDefinitions.h" />
     <ClInclude Include="astc_decomp.h" />
+    <ClInclude Include="bcdec.h" />
     <ClInclude Include="Bfres.h" />
     <ClInclude Include="BinaryVectorReader.h" />
     <ClInclude Include="BinaryVectorWriter.h" />
@@ -251,6 +253,7 @@
     <ClInclude Include="SARC.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="TegraSwizzle.h" />
+    <ClInclude Include="TemplateMgr.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureFormatDecoder.h" />
     <ClInclude Include="TextureToGo.h" />

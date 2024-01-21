@@ -70,7 +70,7 @@ ZStdFile::Result ZStdFile::Decompress(std::vector<unsigned char> Bytes, ZStdFile
 	ZStdFile::Result Result;
 
 	unsigned long long DecompSize = ZSTD_getFrameContentSize(Bytes.data(), Bytes.size());
-	if (DecompSize == 18446744073709551614) //Means the size could not be calculated
+	if (DecompSize >= 18000000000000000000) //Means the size could not be calculated
 	{
 		return Result;
 	}
@@ -81,9 +81,13 @@ ZStdFile::Result ZStdFile::Decompress(std::vector<unsigned char> Bytes, ZStdFile
 		ZSTD_DCtx* const DCtx = ZSTD_createDCtx();
 
 		const size_t DecompSize = ZSTD_decompressDCtx(DCtx, (void*)Result.Data.data(), Result.Data.size(), Bytes.data(), Bytes.size());
-		Result.Data.resize(DecompSize);
-
 		ZSTD_freeDCtx(DCtx);
+		if (DecompSize >= 18000000000000000000) //Means the size could not be calculated
+		{
+			Result.Data.clear();
+			return Result;
+		}
+		Result.Data.resize(DecompSize);
 	}
 	else
 	{
@@ -111,9 +115,13 @@ ZStdFile::Result ZStdFile::Decompress(std::vector<unsigned char> Bytes, ZStdFile
 
 		ZSTD_DCtx* const DCtx = ZSTD_createDCtx();
 		const size_t DecompSize = ZSTD_decompress_usingDDict(DCtx, (void*)Result.Data.data(), Result.Data.size(), Bytes.data(), Bytes.size(), DecompressionDict);
-		Result.Data.resize(DecompSize);
-
 		ZSTD_freeDCtx(DCtx);
+		if (DecompSize >= 18000000000000000000) //Means the size could not be calculated
+		{
+			Result.Data.clear();
+			return Result;
+		}
+		Result.Data.resize(DecompSize);
 	}
 
 	return Result;

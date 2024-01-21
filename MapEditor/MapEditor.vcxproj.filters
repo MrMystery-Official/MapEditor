@@ -225,6 +225,9 @@
     <ClCompile Include="AINBNode.cpp">
       <Filter>Source Files\editor\ainb</Filter>
     </ClCompile>
+    <ClCompile Include="TemplateMgr.cpp">
+      <Filter>Source Files\editor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imconfig.h">
@@ -373,6 +376,12 @@
     </ClInclude>
     <ClInclude Include="AINBNodeDefinitions.h">
       <Filter>Header Files\editor\ainb</Filter>
+    </ClInclude>
+    <ClInclude Include="bcdec.h">
+      <Filter>Header Files\external</Filter>
+    </ClInclude>
+    <ClInclude Include="TemplateMgr.h">
+      <Filter>Header Files\editor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

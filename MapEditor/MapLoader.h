@@ -22,6 +22,7 @@ namespace MapLoader
 		NormalStage = 5
 	};
 
+	void InterpretActorNode(Actor* Actor, BymlFile::Node* Node);
 	std::vector<Actor> LoadMap(std::string Key, MapLoader::Type Type, bool LoadMergedActors);
 	void DetectInternalGameVersion();
 };

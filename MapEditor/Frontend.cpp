@@ -1,5 +1,6 @@
 #include "Frontend.h"
 #include "AINBEditor.h"
+#include "TemplateMgr.h"
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -55,6 +56,10 @@ ImGuiPopUp AddRailPopUp("Add Rail", 400, 123, 3);
 ImGuiPopUp SetPathsPopUp("Setup", 600, 181, 2);
 ImGuiPopUp LoadMapPopUp("Open level", 468, 135, 1);
 ImGuiPopUp ExportModPopUp("Export mod", 468, 78, 1);
+
+ImGuiPopUp PasteTemplatePopUp("Paste template", 400, 124, 1);
+ImGuiPopUp CreateTemplatePopUp("Create template", 400, 124, 1);
+std::vector<Actor> CreateTemplateActors;
 
 namespace Frustum
 {
@@ -376,8 +381,11 @@ void CheckActorSelection(ImVec2 SceneWindowSize, ImVec2 MousePos)
 
 			for (int SubModelIndex = 0; SubModelIndex < LODModel->GL_Textures.size(); SubModelIndex++)
 			{
-				LODModel->GL_VAO[SubModelIndex].Bind();
-				glDrawElements(GL_TRIANGLES, sizeof(int) * LODModel->Faces[SubModelIndex].size(), GL_UNSIGNED_INT, 0);
+				if (LODModel->Faces.size() > SubModelIndex)
+				{
+					LODModel->GL_VAO[SubModelIndex].Bind();
+					glDrawElements(GL_TRIANGLES, sizeof(int) * LODModel->Faces[SubModelIndex].size(), GL_UNSIGNED_INT, 0);
+				}
 			}
 		}
 
@@ -394,6 +402,19 @@ void CheckActorSelection(ImVec2 SceneWindowSize, ImVec2 MousePos)
 		if (PickedActorId == 3024412 || PickedActorId < 0) //3024412 = background color
 		{
 			PickedActorId = -1;
+		}
+
+		if (CreateTemplatePopUp.IsCompleted() && !CreateTemplatePopUp.IsOpen())
+		{
+			if (PickedActorId != -1)
+			{
+				CreateTemplatePopUp.IntData = PickedActorId;
+			}
+			else
+			{
+				CreateTemplatePopUp.IsCompleted() = false;
+			}
+			CreateTemplatePopUp.IsOpen() = true;
 		}
 
 		glReadBuffer(GL_NONE);
@@ -792,6 +813,18 @@ void Frontend::Render() {
 	}
 
 	ImGui::NewLine();
+	ImGui::Text("Template");
+	if (ImGui::Button("Create template"))
+	{
+		CreateTemplateActors.clear();
+		CreateTemplatePopUp.IsOpen() = true;
+	}
+	if (ImGui::Button("Paste template"))
+	{
+		PasteTemplatePopUp.IsOpen() = true;
+	}
+
+	ImGui::NewLine();
 	ImGui::Text("Render Settings");
 	ImGui::Checkbox("Visible actors", &RenderSettings.Visible);
 	ImGui::Checkbox("Invisible actors", &RenderSettings.Invisible);
@@ -1066,6 +1099,20 @@ void Frontend::Render() {
 			{
 				Actor::Link& Link = *it;
 				ImGui::InputScalar(std::string("Dst##" + std::to_string(Identifier)).c_str(), ImGuiDataType_::ImGuiDataType_U64, &Link.Dst);
+				ImGui::SameLine();
+				if (ImGui::Button("Teleport"))
+				{
+					for (Actor LinkActor : *Actors)
+					{
+						if (LinkActor.GetHash() == Link.Dst)
+						{
+							camera.Position.x = LinkActor.GetTranslate().GetX();
+							camera.Position.y = LinkActor.GetTranslate().GetY();
+							camera.Position.z = LinkActor.GetTranslate().GetZ();
+							break;
+						}
+					}
+				}
 				ImGui::InputText(std::string("Gyaml##" + std::to_string(Identifier + 1)).c_str(), &Link.Gyaml);
 				ImGui::InputText(std::string("Name##" + std::to_string(Identifier + 2)).c_str(), &Link.Name);
 				ImGui::InputScalar(std::string("Src##" + std::to_string(Identifier + 3)).c_str(), ImGuiDataType_::ImGuiDataType_U64, &Link.Src);
@@ -1159,6 +1206,75 @@ void Frontend::Render() {
 		SetPathsPopUp.End();
 	}
 
+	if (CreateTemplatePopUp.IsOpen())
+	{
+		CreateTemplatePopUp.Begin();
+		if (CreateTemplatePopUp.BeginPopupModal())
+		{
+			ImGui::InputText("Template name", &CreateTemplatePopUp.GetData()[0]);
+
+			if (CreateTemplatePopUp.IsCompleted())
+			{
+				CreateTemplatePopUp.IsCompleted() = false;
+				CreateTemplateActors.push_back(Actors->at(PickedActorId));
+			}
+
+			if (ImGui::Button("Add actor"))
+			{
+				CreateTemplatePopUp.IsOpen() = false;
+				CreateTemplatePopUp.IsCompleted() = true;
+			}
+
+			for (Actor Actor : CreateTemplateActors)
+			{
+				ImGui::Text(Actor.GetGyml().c_str());
+			}
+
+			if (ImGui::Button("Create"))
+			{
+				TemplateMgr::AddTemplate(CreateTemplatePopUp.GetData()[0], CreateTemplateActors);
+				TemplateMgr::Save();
+
+				CreateTemplatePopUp.Reset();
+				CreateTemplateActors.clear();
+				CreateTemplatePopUp.GetData().resize(1);
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Return"))
+			{
+				CreateTemplatePopUp.Reset();
+				CreateTemplateActors.clear();
+				CreateTemplatePopUp.GetData().resize(1);
+			}
+		}
+		CreateTemplatePopUp.End();
+	}
+
+	if (PasteTemplatePopUp.IsOpen())
+	{
+		PasteTemplatePopUp.Begin();
+		if (PasteTemplatePopUp.BeginPopupModal())
+		{
+			ImGui::InputText("Template name", &PasteTemplatePopUp.GetData()[0]);
+			if (ImGui::Button("Paste"))
+			{
+				if (TemplateMgr::HasTemplate(PasteTemplatePopUp.GetData()[0]))
+				{
+					TemplateMgr::GetTemplate(PasteTemplatePopUp.GetData()[0])->Paste(Vector3F(camera.Position.x, camera.Position.y, camera.Position.z), Actors);
+				}
+				PasteTemplatePopUp.GetData()[0] = "";
+				PasteTemplatePopUp.IsOpen() = false;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Return"))
+			{
+				PasteTemplatePopUp.GetData()[0] = "";
+				PasteTemplatePopUp.IsOpen() = false;
+			}
+		}
+		PasteTemplatePopUp.End();
+	}
+
 	if (LoadMapPopUp.IsOpen())
 	{
 		LoadMapPopUp.Begin();
@@ -1197,10 +1313,19 @@ void Frontend::Render() {
 				LoadMapPopUp.IsOpen() = false;
 				Actors->clear();
 				PickedActorId = -1;
+				Config::MergedActorBymls.clear();
 				(*Actors) = MapLoader::LoadMap(LoadMapPopUp.GetData()[0], (MapLoader::Type)LoadMapPopUp.IntData, LoadMapPopUp.BoolData);
 				camera.Position.x = Actors->at(0).GetTranslate().GetX();
 				camera.Position.y = Actors->at(0).GetTranslate().GetY();
 				camera.Position.z = Actors->at(0).GetTranslate().GetZ();
+
+				//Hash generation
+				for (Actor& Actor : *Actors)
+				{
+					HashMgr::CurrentHash = std::max(HashMgr::CurrentHash, Actor.GetHash());
+					HashMgr::CurrentSRTHash = std::max(HashMgr::CurrentSRTHash, Actor.GetSRTHash());
+				}
+
 				LoadMapPopUp.Reset();
 			}
 			ImGui::PopItemWidth();
@@ -1505,10 +1630,17 @@ void Frontend::Render() {
 
 		for (int SubModelIndex = 0; SubModelIndex < LODModel->GL_Textures.size(); SubModelIndex++)
 		{
-			LODModel->GL_Textures[SubModelIndex]->Bind();
-			LODModel->GL_VAO[SubModelIndex].Bind();
+			if (LODModel->GL_Textures[SubModelIndex] != NULL && LODModel->GL_VAO.size() > SubModelIndex)
+			{
+				LODModel->GL_Textures[SubModelIndex]->Bind();
+				LODModel->GL_VAO[SubModelIndex].Bind();
 
-			glDrawElements(GL_TRIANGLES, sizeof(int) * LODModel->Faces[SubModelIndex].size(), GL_UNSIGNED_INT, 0);
+				glDrawElements(GL_TRIANGLES, sizeof(int) * LODModel->Faces[SubModelIndex].size(), GL_UNSIGNED_INT, 0);
+			}
+			else
+			{
+				std::cout << "Skipping " << Actor.GetGyml() << " for Index " << SubModelIndex << " and Hash " << Actor.GetHash() << std::endl;
+			}
 		}
 	}
 

@@ -5,6 +5,7 @@
 #include "EditorConfig.h"
 #include "AINB.h"
 #include "AINBNodeDefinitions.h"
+#include "TemplateMgr.h"
 
 bool LoadEditorConfig()
 {
@@ -20,7 +21,7 @@ int main(int, char**)
 {
     Config::WorkingDir = std::filesystem::current_path().string() + "/WorkingDir";
     Util::CreateDir(Config::WorkingDir);
-    Util::CreateDir(Config::WorkingDir);
+    Util::CreateDir(Config::WorkingDir + "/Templates");
     Util::CreateDir(Config::WorkingDir + "/EditorModels");
     Util::CreateDir(Config::WorkingDir + "/Cache");
     Util::CreateDir(Config::WorkingDir + "/Save");
@@ -53,15 +54,8 @@ int main(int, char**)
         ActorModelLibrary::Initialize();
         //AINBNodeDefinitions::Generate();
         AINBNodeDefinitions::Initialize();
-
-        //AINBFile AINB(Config::GetRomFSFile("Logic/Dungeon001_42a6.logic.root.ainb"));
+        TemplateMgr::Initialize();
     }
-
-    /*
-    std::vector<Actor> Actors = MapLoader::LoadMap("001", MapLoader::Type::SmallDungeon);
-
-    Frontend::SetActors(&Actors);
-    */
 
     while (!Frontend::ShouldWindowClose())
     {

@@ -48,6 +48,8 @@ public:
 	{
     public:
         Node(BymlFile::Type Type, std::string Key = "");
+        ~Node();
+        Node() {}
 
         BymlFile::Type& GetType();
         std::string& GetKey();
@@ -57,7 +59,7 @@ public:
         bool HasChild(std::string Key);
         BymlFile::Node* GetChild(std::string Key);
         BymlFile::Node* GetChild(int Index);
-        void AddChild(BymlFile::Node& Node);
+        void AddChild(BymlFile::Node Node);
         std::vector<BymlFile::Node>& GetChildren();
     private:
         BymlFile::Type m_Type;
@@ -98,7 +100,7 @@ private:
     bool IsNumber(const std::string& str);
     uint32_t GetStringTableIndex(std::string Value);
     uint32_t GetHashKeyTableIndex(std::string Value);
-    void ParseNode(BinaryVectorReader& Reader, int Offset, BymlFile::Type Type, std::string Key, BymlFile::Node* Parent);
+    void ParseNode(BinaryVectorReader& Reader, int Offset, BymlFile::Type Type, std::string Key, BymlFile::Node* Parent, uint32_t ChildIndex);
     std::string GenerateNodeHash(BymlFile::Node* Node);
     void WriteNode(BinaryVectorWriter& Writer, uint32_t DataOffset, uint32_t Offset, BymlFile::Node* Node);
 };
