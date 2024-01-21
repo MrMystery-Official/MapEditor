@@ -272,7 +272,7 @@ void TextureFormatDecoder::DecodeBC4(unsigned int Width, unsigned int Height, st
 	unsigned long BlockCountY = (Height + 3) / 4;
 
 	unsigned char* BlockStorage = Data.data();
-	unsigned char* BlockDest = new unsigned char[Width * Height]; //Allocating at heap
+	unsigned char* BlockDest = new unsigned char[(BlockCountX * 4) * (BlockCountY * 4)]; //Allocating at heap
 
 	for (unsigned long j = 0; j < BlockCountY; j++)
 	{
