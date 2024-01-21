@@ -590,8 +590,6 @@ BfresFile::BfresFile(std::string Path, std::vector<unsigned char> Bytes)
                 Reader.Seek(FVTXAttArrOffset + 16 * (i + 1), BinaryVectorReader::Position::Begin);
             }
 
-            std::cout << BufferOffset << std::endl;
-
             std::vector<BfresFile::VertexBuffer> VertexBuffers(NumBuffer);
             for (int i = 0; i < NumBuffer; i++)
             {
