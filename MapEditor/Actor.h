@@ -202,6 +202,9 @@ public:
 
 	uint32_t& GetMergedActorParentIndex();
 	void SetMergedActorParentIndex(uint32_t Index);
+
+	bool& IsPhysicsObject();
+	void SetPhysicsObject(bool PhysicsObject);
 private:
 	/* TotK Engine */
 	Actor::Type m_Type; //Required
@@ -227,6 +230,7 @@ private:
 
 	/* Editor */
 	BfresFile* m_Model; //Technically not required, but edior will crash if not set
+	bool m_PhysicsObject = false;
 
 	/* Physics Engine */
 	Phive m_Phive; //Technically not required, but TotK doesn't like actors without Phive data:(
@@ -235,6 +239,6 @@ private:
 	uint32_t m_CollisionSRTHash = 0; //Not required
 
 	/* Merged actor */
-	uint32_t m_MergedActorIndex = 0;
-	uint32_t m_MergedActorParentIndex = 0;
+	uint32_t m_MergedActorIndex = -1;
+	uint32_t m_MergedActorParentIndex = -1;
 };

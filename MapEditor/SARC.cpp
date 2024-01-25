@@ -25,6 +25,30 @@ SarcFile::Entry& SarcFile::GetEntry(std::string Name)
     return this->GetEntries()[0];
 }
 
+bool SarcFile::HasEntry(std::string Name)
+{
+    for (SarcFile::Entry& Entry : this->GetEntries())
+    {
+        if (Entry.Name == Name)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool SarcFile::HasDirectory(std::string Path)
+{
+    for (SarcFile::Entry& Entry : this->GetEntries())
+    {
+        if (Entry.Name.rfind(Path, 0) == 0)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 SarcFile::SarcFile(std::vector<unsigned char> Bytes)
 {
     BinaryVectorReader Reader(Bytes);

@@ -112,6 +112,21 @@ void CreateExportOnlyFiles(std::vector<Actor>* Actors, std::string Path)
 		{
 			BymlFile ActorInfoByml(ZStdFile::Decompress(Config::GetRomFSFile("RSDB/ActorInfo.Product." + Config::GetInternalGameVersion() + ".rstbl.byml.zs"), ZStdFile::Dictionary::Base).Data);
 
+			//This loop sees if a new actor was added since the last time the RSDB was generated -> this saves a HUGE amount of time every export
+			for (BymlFile::Node& Node : ActorInfoByml.GetNodes())
+			{
+				if (Node.HasChild("__RowId"))
+				{
+					for (std::string CActor : CollisionActors)
+					{
+						if (Node.GetChild("__RowId")->GetValue<std::string>() == CActor)
+						{
+							goto RESTBLGeneration;
+						}
+					}
+				}
+			}
+
 			ActorInfoByml.NodeCaching = true;
 
 			for (int i = 0; i < CollisionActors.size(); i++)
@@ -196,9 +211,11 @@ void CreateExportOnlyFiles(std::vector<Actor>* Actors, std::string Path)
 				ActorInfoByml.AddStringTableEntry(CollisionActors[i]);
 			}
 			Util::CreateDir(Path + "/RSDB");
-			ZStdFile::Compress(ActorInfoByml.ToBinary(BymlFile::TableGeneration::Manual), ZStdFile::Dictionary::Base).WriteToFile(Path + "/RSDB/ActorInfo.Product." + Config::GetInternalGameVersion() + ".rstbl.byml.zs");
+			ZStdFile::Compress(ActorInfoByml.ToBinary(BymlFile::TableGeneration::Manual), ZStdFile::Dictionary::Base).WriteToFile(Config::GetWorkingDirFile("Save/RSDB/ActorInfo.Product." + Config::GetInternalGameVersion() + ".rstbl.byml.zs"));
 		}
 	}
+
+RESTBLGeneration:
 
 	/* RESTBL */
 	{
@@ -1202,8 +1219,8 @@ Copy:
 
 	if (!Save)
 	{
-		Util::CopyDirectoryRecursively(Config::GetWorkingDirFile("Save"), OldPath);
-
 		CreateExportOnlyFiles(Actors, OldPath);
+
+		Util::CopyDirectoryRecursively(Config::GetWorkingDirFile("Save"), OldPath);
 	}
 }

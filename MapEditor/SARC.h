@@ -23,6 +23,8 @@ public:
 
 	std::vector<SarcFile::Entry>& GetEntries();
 	SarcFile::Entry& GetEntry(std::string Name);
+	bool HasEntry(std::string Name);
+	bool HasDirectory(std::string Path);
 
 	std::vector<unsigned char> ToBinary();
 	void WriteToFile(std::string Path);

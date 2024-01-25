@@ -10,6 +10,7 @@ void ActorModelLibrary::Initialize()
 	ActorModelLibrary::Models.insert({ "Area", BfresFile::CreateDefaultModel("Area", 0, 255, 0, 50) });
 	ActorModelLibrary::Models.insert({ "ForbidArea", BfresFile::CreateDefaultModel("ForbidArea", 255, 0, 0, 50) });
 	ActorModelLibrary::Models.insert({ "Collision", BfresFile::CreateDefaultModel("Collision", 255, 255, 0, 50) });
+	ActorModelLibrary::Models.insert({ "EditorSystem", BfresFile::CreateDefaultModel("EditorSystem", 255, 165, 2, 255) });
 }
 
 bool ActorModelLibrary::IsModelLoaded(std::string ModelName)
@@ -282,4 +283,13 @@ uint32_t& Actor::GetMergedActorParentIndex()
 void Actor::SetMergedActorParentIndex(uint32_t Index)
 {
 	this->m_MergedActorParentIndex = Index;
+}
+
+bool& Actor::IsPhysicsObject()
+{
+	return this->m_PhysicsObject;
+}
+void Actor::SetPhysicsObject(bool PhysicsObject)
+{
+	this->m_PhysicsObject = PhysicsObject;
 }

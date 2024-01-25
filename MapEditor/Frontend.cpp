@@ -544,6 +544,28 @@ void Frontend::Render() {
 			}
 			NewActor.SetGyml(AddActorPopUp.GetData()[0] + "_" + NewGymlId);
 			NewActor.SetModel(ActorModelLibrary::GetModel("Collision"));
+			NewActor.SetCategory("EditorCollision");
+			goto FinishedBfresLoading;
+		}
+
+		if (NewActor.GetGyml().find("Area") != std::string::npos)
+		{
+			if (NewActor.GetGyml().find("Forbid") == std::string::npos)
+			{
+				NewActor.SetModel(ActorModelLibrary::GetModel("Area"));
+			}
+			else
+			{
+				NewActor.SetModel(ActorModelLibrary::GetModel("ForbidArea"));
+			}
+			NewActor.SetCategory("System");
+			goto FinishedBfresLoading;
+		}
+
+		if (NewActor.GetGyml().rfind("MapEditor_System_", 0) == 0)
+		{
+			NewActor.SetModel(ActorModelLibrary::GetModel("EditorSystem"));
+			NewActor.SetCategory("EditorSystem");
 			goto FinishedBfresLoading;
 		}
 
@@ -684,8 +706,14 @@ void Frontend::Render() {
 
 			for (Actor& PhysicsActor : *Actors)
 			{
-				if (PhysicsActor.GetCategory() == "MapStatic" || PhysicsActor.GetCategory() == "System")
+				if (PhysicsActor.GetCategory() == "MapStatic" || PhysicsActor.GetCategory() == "System" && PhysicsActor.GetMergedActorIndex() == -1 && (PhysicsActor.GetGyml().rfind("FldObj_", 0) == 0 || PhysicsActor.GetGyml().rfind("TwnObj_", 0) == 0))
 				{
+					if (!PhysicsActor.GetPhive().Placement.count("ID"))
+					{
+						std::cout << "Warning: Actor without PhiveID!\n";
+						continue;
+					}
+
 					uint64_t Hash = PhysicsActor.GetHash();
 					uint32_t SRTHash = PhysicsActor.GetSRTHash();
 					uint64_t PhiveHash = 0;
@@ -700,6 +728,8 @@ void Frontend::Render() {
 						if (SRTHash > HashMgr::CurrentSRTHash) HashMgr::CurrentSRTHash = SRTHash;
 
 						HashMgr::AddHash({ Hash, PhiveHash, SRTHash });
+
+						std::cout << Hash << ", " << PhiveHash << ", " << SRTHash << ": " << PhysicsActor.GetCategory() << ", " << PhysicsActor.GetGyml() << std::endl;
 
 						HashMgr::ArtificialHash NewHash = HashMgr::GetArtificialHash(false);
 						if (!SRTHashes.count(SRTHash) && !Hashes.count(Hash) && !PhiveHashes.count(PhiveHash))
@@ -772,12 +802,14 @@ void Frontend::Render() {
 
 				NewActor.SetHash(NewHash.ActorHash);
 				NewActor.SetSRTHash(NewHash.SRTHash);
+				/*
 				if (Physics)
 				{
 					std::map<std::string, std::string>::iterator Iter = NewActor.GetPhive().Placement.find("ID");
 					if (Iter != NewActor.GetPhive().Placement.end())
 						Iter->second = std::to_string(NewHash.PhiveHash);
 				}
+				*/
 
 				(*Actors)[Actors->size() - Amount + i] = NewActor;
 			}
@@ -788,28 +820,6 @@ void Frontend::Render() {
 		}
 
 		StackActorsPopUp.Reset();
-	}
-
-	if (Config::MapType == 0) //0 = SmallDungeon
-	{
-		if (ImGui::Button("StartPos to WarpIn Actor"))
-		{
-			BymlFile StartPosByml(ZStdFile::Decompress(Config::GetWorkingDirFile("Save/Banc/SmallDungeon/StartPos/SmallDungeon.startpos.byml.zs"), ZStdFile::Dictionary::Base).Data);
-
-			Actor* WarpInActor = nullptr;
-			for (Actor& Actor : *Actors)
-			{
-				if (Actor.GetGyml().rfind("DgnObj_Small_Warpin_B_", 0) == 0)
-				{
-					WarpInActor = &Actor;
-					break;
-				}
-			}
-			StartPosByml.GetNode("OnElevator")->GetChild("Dungeon" + Config::Key)->GetChild("Trans")->GetChild(0)->SetValue<float>(WarpInActor->GetTranslate().GetX());
-			StartPosByml.GetNode("OnElevator")->GetChild("Dungeon" + Config::Key)->GetChild("Trans")->GetChild(1)->SetValue<float>(WarpInActor->GetTranslate().GetY());
-			StartPosByml.GetNode("OnElevator")->GetChild("Dungeon" + Config::Key)->GetChild("Trans")->GetChild(2)->SetValue<float>(WarpInActor->GetTranslate().GetZ());
-			ZStdFile::Compress(StartPosByml.ToBinary(BymlFile::TableGeneration::Auto), ZStdFile::Dictionary::Base).WriteToFile(Config::GetWorkingDirFile("Save/Banc/SmallDungeon/StartPos/SmallDungeon.startpos.byml.zs"));
-		}
 	}
 
 	ImGui::NewLine();
@@ -895,6 +905,7 @@ void Frontend::Render() {
 			ImGui::NewLine();
 			ImGui::Text("Debug");
 			ImGui::Text(SelectedActor.GetCategory().c_str());
+			ImGui::Text(SelectedActor.IsPhysicsObject() ? "true" : "false");
 			ImGui::NewLine();
 			/*Actor identification*/
 			ImGui::Text("Identification");
@@ -946,7 +957,37 @@ void Frontend::Render() {
 
 							HashMgr::ArtificialHash NewHash = HashMgr::GetArtificialHash(false);
 
-							NewActor.SetGyml("MapEditor_Collision_File");
+							std::string NewGymlId = Config::Key + std::to_string(NewHash.ActorHash).substr(3, std::to_string(NewHash.ActorHash).length() - 3); //Remove first 3 chars
+							if (NewGymlId[0] == '0') NewGymlId[0] = '2';
+							if (NewGymlId[1] == '0') NewGymlId[1] = '2';
+							if (NewGymlId[2] == '0') NewGymlId[2] = '2';
+
+							if (NewGymlId[1] == '-') NewGymlId[1] = '0';
+
+							if (NewGymlId[0] == 'A') NewGymlId[0] = '3';
+							if (NewGymlId[0] == 'B') NewGymlId[0] = '4';
+							if (NewGymlId[0] == 'C') NewGymlId[0] = '5';
+							if (NewGymlId[0] == 'D') NewGymlId[0] = '6';
+							if (NewGymlId[0] == 'E') NewGymlId[0] = '7';
+							if (NewGymlId[0] == 'F') NewGymlId[0] = '8';
+							if (NewGymlId[0] == 'G') NewGymlId[0] = '9';
+							if (NewGymlId[0] == 'H')
+							{
+								NewGymlId[0] = '3';
+								NewGymlId[1] = '1';
+							}
+							if (NewGymlId[0] == 'I')
+							{
+								NewGymlId[0] = '4';
+								NewGymlId[1] = '1';
+							}
+							if (NewGymlId[0] == 'J')
+							{
+								NewGymlId[0] = '5';
+								NewGymlId[1] = '1';
+							}
+							NewActor.SetGyml("MapEditor_Collision_File_" + NewGymlId);
+
 							NewActor.SetHash(NewHash.ActorHash);
 							NewActor.SetSRTHash(NewHash.SRTHash);
 

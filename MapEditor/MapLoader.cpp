@@ -410,10 +410,6 @@ std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type, boo
 	}
 
 	Config::BancPrefix = BancPathPrefix;
-	if (!Util::FileExists(Config::GetWorkingDirFile("Save/Banc/SmallDungeon/StartPos/SmallDungeon.startpos.byml.zs")))
-	{
-		Util::CopyFileToDest(Config::GetRomFSFile("Banc/SmallDungeon/StartPos/SmallDungeon.startpos.byml.zs"), Config::GetWorkingDirFile("Save/Banc/SmallDungeon/StartPos/SmallDungeon.startpos.byml.zs"));
-	}
 
 	BymlFile StaticActorByml(ZStdFile::Decompress(Config::GetRomFSFile(BancPathPrefix + Key + "_Static.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml).Data);
 	BymlFile DynamicActorByml(ZStdFile::Decompress(Config::GetRomFSFile(BancPathPrefix + Key + "_Dynamic.bcett.byml.zs"), ZStdFile::Dictionary::BcettByaml).Data);
@@ -512,6 +508,7 @@ std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type, boo
 
 	std::map<std::string, std::string> ActorModelNames;
 	std::map<std::string, std::string> ActorCategories;
+	std::map<std::string, bool> ActorPhysicsObject;
 
 	/* Actor model loading */
 	for (Actor& Actor : Actors)
@@ -533,10 +530,17 @@ std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type, boo
 		if (Actor.GetGyml().rfind("MapEditor_Collision_", 0) == 0)
 		{
 			Actor.SetModel(ActorModelLibrary::GetModel("Collision"));
-			Actor.SetCategory("Editor");
+			Actor.SetCategory("EditorCollision");
 			continue;
 		}
 
+		if (Actor.GetGyml().rfind("MapEditor_System_", 0) == 0)
+		{
+			Actor.SetModel(ActorModelLibrary::GetModel("EditorSystem"));
+			Actor.SetCategory("EditorSystem");
+			continue;
+		}
+		
 		if (!ActorModelNames.count(Actor.GetGyml()))
 		{
 			ZStdFile::Result Result = ZStdFile::Decompress(Config::GetRomFSFile("Pack/Actor/" + Actor.GetGyml() + ".pack.zs"), ZStdFile::Dictionary::Pack);
@@ -545,6 +549,7 @@ std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type, boo
 			{
 				ActorModelNames[Actor.GetGyml()] = "None";
 				ActorCategories[Actor.GetGyml()] = "Editor";
+				ActorPhysicsObject[Actor.GetGyml()] = false;
 				Actor.SetModel(ActorModelLibrary::GetModel("None"));
 				continue;
 			}
@@ -592,6 +597,7 @@ std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type, boo
 			}
 
 			ActorCategories[Actor.GetGyml()] = Actor.GetCategory();
+			ActorPhysicsObject[Actor.GetGyml()] = ActorPackFile.HasDirectory("Phive/RigidBodySensorParam");
 
 			if (ModelInfoEntryName.rfind("Component/ModelInfo/None", 0) == 0 || ModelInfoEntryName == "")
 			{
@@ -616,6 +622,7 @@ std::vector<Actor> MapLoader::LoadMap(std::string Key, MapLoader::Type Type, boo
 		{
 			Actor.SetModel(ActorModelLibrary::GetModel(ActorModelNames[Actor.GetGyml()]));
 			Actor.SetCategory(ActorCategories[Actor.GetGyml()]);
+			Actor.SetPhysicsObject(ActorPhysicsObject[Actor.GetGyml()]);
 		}
 	}
 
